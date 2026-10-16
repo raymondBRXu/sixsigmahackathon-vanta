@@ -1,0 +1,459 @@
+{
+  "calendar_assumption": "All listed weekdays are fictional comparable service dates, including holidays; no real Cornell or Ithaca calendar is inferred.",
+  "configuration": {
+    "generator_version": 3,
+    "hours": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "seed": 5300,
+    "start_date": "2026-08-24",
+    "stations_sha256": "e1ab030a6150cb4379a270682a23631c2dd73a938cbc8f55c67d355407fd713f",
+    "timezone": "America/New_York"
+  },
+  "edge_fixtures": [
+    {
+      "bikes": 15,
+      "case": "constant later-hour baseline",
+      "dates": [
+        "2026-08-24",
+        "2026-08-25",
+        "2026-08-26",
+        "2026-08-27",
+        "2026-08-28",
+        "2026-08-31",
+        "2026-09-01",
+        "2026-09-02",
+        "2026-09-03",
+        "2026-09-04",
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-14",
+        "2026-09-15",
+        "2026-09-16",
+        "2026-09-17",
+        "2026-09-18",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24",
+        "2026-09-25"
+      ],
+      "hours": [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "station_id": "S20"
+    },
+    {
+      "bikes_by_station_order": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "case": "balanced network",
+      "date": "2026-09-28",
+      "hour": 9
+    },
+    {
+      "bikes_by_station_order": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30
+      ],
+      "case": "polarized network",
+      "date": "2026-09-28",
+      "hour": 10
+    },
+    {
+      "bikes_by_station_order": [
+        6,
+        24,
+        5,
+        25,
+        0,
+        30,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "case": "exact and near stock thresholds; empty/full",
+      "date": "2026-09-28",
+      "hour": 11
+    }
+  ],
+  "expected_csvs": {
+    "disruption.csv": {
+      "baseline_rows": 7500,
+      "complete_snapshots": 600,
+      "coverage": 1.0,
+      "monitoring_rows": 4500,
+      "rows": 12000,
+      "sha256": "2e5ae9671b85ca1a56fddfd8468724777579eee919ba0258a0b8fc5f2e17efe7"
+    },
+    "edge_cases.csv": {
+      "baseline_rows": 7500,
+      "complete_snapshots": 600,
+      "coverage": 1.0,
+      "monitoring_rows": 4500,
+      "rows": 12000,
+      "sha256": "a8aef765f8dbc952584d277320102793a2609452579a883b022898565f3a029f"
+    },
+    "normal.csv": {
+      "baseline_rows": 7500,
+      "complete_snapshots": 600,
+      "coverage": 1.0,
+      "monitoring_rows": 4500,
+      "rows": 12000,
+      "sha256": "5a9d0fc207e3fb6fa9ed824831569bf12c9a8179b84322176460f97eff3d69d1"
+    }
+  },
+  "geography": "Twelve anchors in Cornell core and eight surrounding anchors; official Cornell venue coordinates and TCAT GTFS20260922 transit coordinates. Geographic visual review and docking-site feasibility are separate; no existing bikeshare facilities are claimed.",
+  "limitations": [
+    "No missing readings, sensor failures, closures or unusable bikes/docks in any scenario.",
+    "Inventory persists across service dates; same-hour sequences may have serial dependence, drift or boundary concentration and require independent suitability review.",
+    "No operator dispatch, nightly rebalancing, overnight trips or weekend trips are simulated.",
+    "Normal means regular simulation, not guaranteed absence of inventory warnings or statistical signals.",
+    "Disruption is an operational redistribution, not equipment failure; detection must be evaluated independently.",
+    "No SPC implementation or baseline suitability approval is supplied by this generator."
+  ],
+  "model": {
+    "afternoon_at_15_16_17": "6 + uniform integer 0..4 attempts each hour, academic to residential",
+    "background_attempts": "10 at 08/09/10/17/18/19; 6 at other hours after 07; symmetric distance-weighted station pairs",
+    "capacity_handling": "Transfers require a bike at the source and a free position at the destination",
+    "capacity_per_station": 30,
+    "cross_date_continuity": "Each station's next planned date 07:00 inventory equals its previous planned date 21:00 inventory, including Friday-to-Monday",
+    "disruption_monitoring_morning_at_08_09_10": "48 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
+    "distance_pair_weight": "1 / (1 + straight-line distance in km), at most 1; not road distance, slope or travel time",
+    "edge_adjustments": "Artificial software fixtures during daytime hours only, not operator dispatch or a claimed natural commuting process",
+    "evening_at_18_19_20_21": "9 + uniform integer 0..4 attempts each hour, academic/mixed/transport to residential, including library return",
+    "initial_allocation": "15 bikes at every station only at 07:00 on the first service date; no daily reset or operator redistribution",
+    "midday_at_11_12_13_14": "6 + uniform integer 0..4 attempts each hour among academic/mixed/transport stations",
+    "normal_morning_at_08_09_10": "16 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
+    "outside_observation_window": "No movements are modeled outside 07:00-21:00 or on unlisted weekend days; inventory is held unchanged",
+    "sensors": "All automatic readings accurate, complete and on the scheduled hour",
+    "total_bikes": 300,
+    "total_positions": 600,
+    "transfer": "Instantaneous single-bike movement, no in-transit inventory or travel times"
+  },
+  "not_detector_input": true,
+  "provenance": "Inventories, bikeshare stations and flows are entirely simulated; geographic landmark anchors are real official-source coordinates. No real sensor readings, demand observations or trip records.",
+  "station_sources": [
+    {
+      "coordinate_note": "Cornell event location JSON-LD; real building anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/rpcc",
+      "station_id": "S01"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; real North Campus residential/community hub anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/appel_commons",
+      "station_id": "S02"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD for Morrison Dining/Toni Morrison Hall; real housing and dining anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/event/annual-celebration-of-gratitude-dinner-on-thanksgiving-day-2026",
+      "station_id": "S03"
+    },
+    {
+      "coordinate_note": "Cornell venue map iframe center, corroborated within the Baker Tower footprint from Cornell Facilities public GIS CU Buildings layer (fac_code3004T), accessed2026-10-16. Real West Campus housing anchor, fictional station nearby; no installation feasibility claim.",
+      "source_url": "https://events.cornell.edu/baker_tower",
+      "station_id": "S04"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; real West Campus housing anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/keeton_house",
+      "station_id": "S05"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; library anchor covering Olin/Uris area with one station.",
+      "source_url": "https://events.cornell.edu/olin_library",
+      "station_id": "S06"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; engineering anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/upson_hall",
+      "station_id": "S07"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; agriculture/life sciences library anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/mann_library",
+      "station_id": "S08"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; physical sciences/teaching area anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/rockefeller_hall",
+      "station_id": "S09"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; academic and dining hub anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/kennedy_hall",
+      "station_id": "S10"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; student union and dining anchor, fictional station nearby.",
+      "source_url": "https://events.cornell.edu/willard_straight",
+      "station_id": "S11"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; eastern academic and food hub anchor. Chosen instead of Gates to reduce clustering near Upson.",
+      "source_url": "https://events.cornell.edu/stocking_hall",
+      "station_id": "S12"
+    },
+    {
+      "coordinate_note": "Cornell event location JSON-LD; Cornell building in Collegetown, classified as off-core neighborhood gateway for this simulation.",
+      "source_url": "https://events.cornell.edu/schwartz_center",
+      "station_id": "S13"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id1710 College @ Mitchell; feed version20260922. Coordinate is a real transit stop used only as a neighborhood anchor, not a bikeshare facility.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S14"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id100 Ithaca Commons - Seneca St; feed version20260922. Real transit anchor, fictional bikeshare station nearby.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S15"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id165 Ithaca Commons - Green St; feed version20260922. Real transit anchor, fictional bikeshare station nearby.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S16"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id1753 Maplewood Apartments; feed version20260922. Real graduate-housing area/transit anchor, fictional bikeshare station nearby.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S17"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id3711 Pleasant Grove @ Hanshaw; feed version20260922. Real neighborhood/transit anchor, fictional bikeshare station nearby. Residential role is a simulation classification, not measured demand.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S18"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id313 Hudson @ Columbia; feed version20260922. Real lower-South-Hill neighborhood/transit anchor, fictional bikeshare station nearby; no Ithaca College demand claim.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S19"
+    },
+    {
+      "coordinate_note": "TCAT GTFS stops.txt stop_id1143 Stewart Park Entrance; feed version20260922. Real park-entry transit anchor, fictional bikeshare station nearby.",
+      "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+      "station_id": "S20"
+    }
+  ],
+  "synthetic": true,
+  "transfer_audit": {
+    "disruption": {
+      "baseline": {
+        "afternoon_return": {
+          "planned_transfers": 603,
+          "successful_transfers": 593
+        },
+        "background": {
+          "planned_transfers": 2700,
+          "successful_transfers": 2421
+        },
+        "evening_return": {
+          "planned_transfers": 1112,
+          "successful_transfers": 817
+        },
+        "midday_exchange": {
+          "planned_transfers": 781,
+          "successful_transfers": 657
+        },
+        "morning_to_class": {
+          "planned_transfers": 1405,
+          "successful_transfers": 1300
+        }
+      },
+      "monitoring": {
+        "afternoon_return": {
+          "planned_transfers": 347,
+          "successful_transfers": 347
+        },
+        "background": {
+          "planned_transfers": 1620,
+          "successful_transfers": 1391
+        },
+        "evening_return": {
+          "planned_transfers": 665,
+          "successful_transfers": 546
+        },
+        "midday_exchange": {
+          "planned_transfers": 457,
+          "successful_transfers": 298
+        },
+        "morning_to_class": {
+          "planned_transfers": 2310,
+          "successful_transfers": 951
+        }
+      }
+    },
+    "edge_cases": {
+      "baseline": {
+        "afternoon_return": {
+          "planned_transfers": 603,
+          "successful_transfers": 594
+        },
+        "background": {
+          "planned_transfers": 2700,
+          "successful_transfers": 2432
+        },
+        "evening_return": {
+          "planned_transfers": 1112,
+          "successful_transfers": 820
+        },
+        "midday_exchange": {
+          "planned_transfers": 781,
+          "successful_transfers": 658
+        },
+        "morning_to_class": {
+          "planned_transfers": 1405,
+          "successful_transfers": 1303
+        }
+      },
+      "monitoring": {
+        "afternoon_return": {
+          "planned_transfers": 360,
+          "successful_transfers": 356
+        },
+        "background": {
+          "planned_transfers": 1620,
+          "successful_transfers": 1471
+        },
+        "evening_return": {
+          "planned_transfers": 653,
+          "successful_transfers": 524
+        },
+        "midday_exchange": {
+          "planned_transfers": 478,
+          "successful_transfers": 402
+        },
+        "morning_to_class": {
+          "planned_transfers": 862,
+          "successful_transfers": 806
+        }
+      }
+    },
+    "normal": {
+      "baseline": {
+        "afternoon_return": {
+          "planned_transfers": 603,
+          "successful_transfers": 593
+        },
+        "background": {
+          "planned_transfers": 2700,
+          "successful_transfers": 2421
+        },
+        "evening_return": {
+          "planned_transfers": 1112,
+          "successful_transfers": 817
+        },
+        "midday_exchange": {
+          "planned_transfers": 781,
+          "successful_transfers": 657
+        },
+        "morning_to_class": {
+          "planned_transfers": 1405,
+          "successful_transfers": 1300
+        }
+      },
+      "monitoring": {
+        "afternoon_return": {
+          "planned_transfers": 360,
+          "successful_transfers": 355
+        },
+        "background": {
+          "planned_transfers": 1620,
+          "successful_transfers": 1434
+        },
+        "evening_return": {
+          "planned_transfers": 653,
+          "successful_transfers": 523
+        },
+        "midday_exchange": {
+          "planned_transfers": 478,
+          "successful_transfers": 362
+        },
+        "morning_to_class": {
+          "planned_transfers": 862,
+          "successful_transfers": 800
+        }
+      }
+    }
+  },
+  "transfer_audit_scope": "Synthetic planned/successful movements aggregated by scenario and phase; excludes the initial allocation and artificial edge-fixture adjustments; never customer attempts or observed trips"
+}
