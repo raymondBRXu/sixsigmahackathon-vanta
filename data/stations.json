@@ -1,0 +1,182 @@
+[
+  {
+    "area": "Cornell North Campus",
+    "capacity": 30,
+    "latitude": 42.455906,
+    "longitude": -76.477486,
+    "name": "Robert Purcell Community Center — simulated station",
+    "station_id": "S01",
+    "type": "residential"
+  },
+  {
+    "area": "Cornell North Campus",
+    "capacity": 30,
+    "latitude": 42.453548,
+    "longitude": -76.476112,
+    "name": "Appel Commons — simulated station",
+    "station_id": "S02",
+    "type": "residential"
+  },
+  {
+    "area": "Cornell North Campus",
+    "capacity": 30,
+    "latitude": 42.455619,
+    "longitude": -76.479374,
+    "name": "Toni Morrison Hall — simulated station",
+    "station_id": "S03",
+    "type": "residential"
+  },
+  {
+    "area": "Cornell West Campus",
+    "capacity": 30,
+    "latitude": 42.448925,
+    "longitude": -76.488022,
+    "name": "Baker Tower — simulated station",
+    "station_id": "S04",
+    "type": "residential"
+  },
+  {
+    "area": "Cornell West Campus",
+    "capacity": 30,
+    "latitude": 42.446968,
+    "longitude": -76.489693,
+    "name": "William Keeton House — simulated station",
+    "station_id": "S05",
+    "type": "residential"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.447777,
+    "longitude": -76.484535,
+    "name": "Olin Library / Arts Quad — simulated station",
+    "station_id": "S06",
+    "type": "academic"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.443924,
+    "longitude": -76.48217,
+    "name": "Upson Hall / Engineering Quad — simulated station",
+    "station_id": "S07",
+    "type": "academic"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.448719,
+    "longitude": -76.476494,
+    "name": "Mann Library — simulated station",
+    "station_id": "S08",
+    "type": "academic"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.449066,
+    "longitude": -76.481926,
+    "name": "Rockefeller Hall — simulated station",
+    "station_id": "S09",
+    "type": "academic"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.448212,
+    "longitude": -76.479431,
+    "name": "Kennedy Hall / Ag Quad — simulated station",
+    "station_id": "S10",
+    "type": "academic"
+  },
+  {
+    "area": "Cornell Central Campus",
+    "capacity": 30,
+    "latitude": 42.44648,
+    "longitude": -76.485527,
+    "name": "Willard Straight Hall — simulated station",
+    "station_id": "S11",
+    "type": "mixed"
+  },
+  {
+    "area": "Cornell East Campus",
+    "capacity": 30,
+    "latitude": 42.447136,
+    "longitude": -76.47123,
+    "name": "Stocking Hall / Dairy Bar — simulated station",
+    "station_id": "S12",
+    "type": "academic"
+  },
+  {
+    "area": "Collegetown",
+    "capacity": 30,
+    "latitude": 42.44252,
+    "longitude": -76.485741,
+    "name": "Schwartz Center / Collegetown North — simulated station",
+    "station_id": "S13",
+    "type": "mixed"
+  },
+  {
+    "area": "Collegetown",
+    "capacity": 30,
+    "latitude": 42.43777,
+    "longitude": -76.485129,
+    "name": "College Avenue at Mitchell Street — simulated station",
+    "station_id": "S14",
+    "type": "residential"
+  },
+  {
+    "area": "Downtown Ithaca",
+    "capacity": 30,
+    "latitude": 42.440507,
+    "longitude": -76.498482,
+    "name": "Ithaca Commons / Seneca Street — simulated station",
+    "station_id": "S15",
+    "type": "transport"
+  },
+  {
+    "area": "Downtown Ithaca",
+    "capacity": 30,
+    "latitude": 42.438607,
+    "longitude": -76.497657,
+    "name": "Ithaca Commons / Green Street — simulated station",
+    "station_id": "S16",
+    "type": "transport"
+  },
+  {
+    "area": "East Ithaca",
+    "capacity": 30,
+    "latitude": 42.441184,
+    "longitude": -76.475128,
+    "name": "Maplewood Apartments — simulated station",
+    "station_id": "S17",
+    "type": "residential"
+  },
+  {
+    "area": "Cayuga Heights",
+    "capacity": 30,
+    "latitude": 42.467655,
+    "longitude": -76.47782,
+    "name": "Pleasant Grove at Hanshaw / Community Corners — simulated station",
+    "station_id": "S18",
+    "type": "residential"
+  },
+  {
+    "area": "South Hill",
+    "capacity": 30,
+    "latitude": 42.43579,
+    "longitude": -76.492255,
+    "name": "Hudson Street at Columbia Street — simulated station",
+    "station_id": "S19",
+    "type": "residential"
+  },
+  {
+    "area": "Waterfront / Stewart Park",
+    "capacity": 30,
+    "latitude": 42.462711,
+    "longitude": -76.500808,
+    "name": "Stewart Park Entrance — simulated station",
+    "station_id": "S20",
+    "type": "recreation"
+  }
+]

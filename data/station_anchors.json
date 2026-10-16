@@ -1,0 +1,222 @@
+[
+  {
+    "station_id": "S01",
+    "name": "Robert Purcell Community Center — simulated station",
+    "area": "Cornell North Campus",
+    "type": "residential",
+    "latitude": 42.455906,
+    "longitude": -76.477486,
+    "source_url": "https://events.cornell.edu/rpcc",
+    "coordinate_note": "Cornell event location JSON-LD; real building anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S02",
+    "name": "Appel Commons — simulated station",
+    "area": "Cornell North Campus",
+    "type": "residential",
+    "latitude": 42.453548,
+    "longitude": -76.476112,
+    "source_url": "https://events.cornell.edu/appel_commons",
+    "coordinate_note": "Cornell event location JSON-LD; real North Campus residential/community hub anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S03",
+    "name": "Toni Morrison Hall — simulated station",
+    "area": "Cornell North Campus",
+    "type": "residential",
+    "latitude": 42.455619,
+    "longitude": -76.479374,
+    "source_url": "https://events.cornell.edu/event/annual-celebration-of-gratitude-dinner-on-thanksgiving-day-2026",
+    "coordinate_note": "Cornell event location JSON-LD for Morrison Dining/Toni Morrison Hall; real housing and dining anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S04",
+    "name": "Baker Tower — simulated station",
+    "area": "Cornell West Campus",
+    "type": "residential",
+    "latitude": 42.448925,
+    "longitude": -76.488022,
+    "source_url": "https://events.cornell.edu/baker_tower",
+    "coordinate_note": "Cornell venue map iframe center, corroborated within the Baker Tower footprint from Cornell Facilities public GIS CU Buildings layer (fac_code3004T), accessed2026-10-16. Real West Campus housing anchor, fictional station nearby; no installation feasibility claim.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S05",
+    "name": "William Keeton House — simulated station",
+    "area": "Cornell West Campus",
+    "type": "residential",
+    "latitude": 42.446968,
+    "longitude": -76.489693,
+    "source_url": "https://events.cornell.edu/keeton_house",
+    "coordinate_note": "Cornell event location JSON-LD; real West Campus housing anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S06",
+    "name": "Olin Library / Arts Quad — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "academic",
+    "latitude": 42.447777,
+    "longitude": -76.484535,
+    "source_url": "https://events.cornell.edu/olin_library",
+    "coordinate_note": "Cornell event location JSON-LD; library anchor covering Olin/Uris area with one station.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S07",
+    "name": "Upson Hall / Engineering Quad — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "academic",
+    "latitude": 42.443924,
+    "longitude": -76.48217,
+    "source_url": "https://events.cornell.edu/upson_hall",
+    "coordinate_note": "Cornell event location JSON-LD; engineering anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S08",
+    "name": "Mann Library — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "academic",
+    "latitude": 42.448719,
+    "longitude": -76.476494,
+    "source_url": "https://events.cornell.edu/mann_library",
+    "coordinate_note": "Cornell event location JSON-LD; agriculture/life sciences library anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S09",
+    "name": "Rockefeller Hall — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "academic",
+    "latitude": 42.449066,
+    "longitude": -76.481926,
+    "source_url": "https://events.cornell.edu/rockefeller_hall",
+    "coordinate_note": "Cornell event location JSON-LD; physical sciences/teaching area anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S10",
+    "name": "Kennedy Hall / Ag Quad — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "academic",
+    "latitude": 42.448212,
+    "longitude": -76.479431,
+    "source_url": "https://events.cornell.edu/kennedy_hall",
+    "coordinate_note": "Cornell event location JSON-LD; academic and dining hub anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S11",
+    "name": "Willard Straight Hall — simulated station",
+    "area": "Cornell Central Campus",
+    "type": "mixed",
+    "latitude": 42.44648,
+    "longitude": -76.485527,
+    "source_url": "https://events.cornell.edu/willard_straight",
+    "coordinate_note": "Cornell event location JSON-LD; student union and dining anchor, fictional station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S12",
+    "name": "Stocking Hall / Dairy Bar — simulated station",
+    "area": "Cornell East Campus",
+    "type": "academic",
+    "latitude": 42.447136,
+    "longitude": -76.47123,
+    "source_url": "https://events.cornell.edu/stocking_hall",
+    "coordinate_note": "Cornell event location JSON-LD; eastern academic and food hub anchor. Chosen instead of Gates to reduce clustering near Upson.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S13",
+    "name": "Schwartz Center / Collegetown North — simulated station",
+    "area": "Collegetown",
+    "type": "mixed",
+    "latitude": 42.44252,
+    "longitude": -76.485741,
+    "source_url": "https://events.cornell.edu/schwartz_center",
+    "coordinate_note": "Cornell event location JSON-LD; Cornell building in Collegetown, classified as off-core neighborhood gateway for this simulation.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S14",
+    "name": "College Avenue at Mitchell Street — simulated station",
+    "area": "Collegetown",
+    "type": "residential",
+    "latitude": 42.43777,
+    "longitude": -76.485129,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id1710 College @ Mitchell; feed version20260922. Coordinate is a real transit stop used only as a neighborhood anchor, not a bikeshare facility.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S15",
+    "name": "Ithaca Commons / Seneca Street — simulated station",
+    "area": "Downtown Ithaca",
+    "type": "transport",
+    "latitude": 42.440507,
+    "longitude": -76.498482,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id100 Ithaca Commons - Seneca St; feed version20260922. Real transit anchor, fictional bikeshare station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S16",
+    "name": "Ithaca Commons / Green Street — simulated station",
+    "area": "Downtown Ithaca",
+    "type": "transport",
+    "latitude": 42.438607,
+    "longitude": -76.497657,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id165 Ithaca Commons - Green St; feed version20260922. Real transit anchor, fictional bikeshare station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S17",
+    "name": "Maplewood Apartments — simulated station",
+    "area": "East Ithaca",
+    "type": "residential",
+    "latitude": 42.441184,
+    "longitude": -76.475128,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id1753 Maplewood Apartments; feed version20260922. Real graduate-housing area/transit anchor, fictional bikeshare station nearby.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S18",
+    "name": "Pleasant Grove at Hanshaw / Community Corners — simulated station",
+    "area": "Cayuga Heights",
+    "type": "residential",
+    "latitude": 42.467655,
+    "longitude": -76.47782,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id3711 Pleasant Grove @ Hanshaw; feed version20260922. Real neighborhood/transit anchor, fictional bikeshare station nearby. Residential role is a simulation classification, not measured demand.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S19",
+    "name": "Hudson Street at Columbia Street — simulated station",
+    "area": "South Hill",
+    "type": "residential",
+    "latitude": 42.43579,
+    "longitude": -76.492255,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id313 Hudson @ Columbia; feed version20260922. Real lower-South-Hill neighborhood/transit anchor, fictional bikeshare station nearby; no Ithaca College demand claim.",
+    "capacity": 30
+  },
+  {
+    "station_id": "S20",
+    "name": "Stewart Park Entrance — simulated station",
+    "area": "Waterfront / Stewart Park",
+    "type": "recreation",
+    "latitude": 42.462711,
+    "longitude": -76.500808,
+    "source_url": "https://s3.amazonaws.com/tcat-gtfs/tcat-ny-us.zip",
+    "coordinate_note": "TCAT GTFS stops.txt stop_id1143 Stewart Park Entrance; feed version20260922. Real park-entry transit anchor, fictional bikeshare station nearby.",
+    "capacity": 30
+  }
+]
