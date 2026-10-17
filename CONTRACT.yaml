@@ -22,9 +22,28 @@
 # Delete the paths you do not use.
 
 spec: SPEC.md
-updated: ""
+updated: "2026-10-16"
 
 tasks:
+  - id: H-09
+    title: Rebuild the approved dashboard in React with Python API parity
+    points: "Preserves working tool, valid QC analysis, documentation and reproducibility"
+    status: in_progress
+    owner: "Codex with disjoint frontend, backend and review subtasks"
+    started_at: "2026-10-16"
+    owns: ["app/", "tests/", "scripts/", "README.md", "SPEC.md", "docs/MVP.md", "docs/plan.md", "demo/", "data/README.md", "pyproject.toml", "uv.lock", "pytest.ini", ".python-version", ".node-version", ".gitignore", ".github/"]
+    notes: >
+      Explicitly authorized by the user on ray/dashboard-react. Preserve the
+      final Streamlit dashboard's content, data and interval-based analysis.
+      The archived source remains in stash. No baseline review or automated
+      SPC alarms. Keep statistics in Python; React renders the interaction.
+    definition_of_done: >
+      Locked Python tests and frontend tests/build pass. Browser verification
+      covers default normal values, double-click station selection, playback,
+      queue names, interval analysis, chart loading, CSV upload/download and
+      mobile layout. Verify a self-contained local deployment bundle.
+    result: "Implemented and locally verified: 104 Python tests, 22 frontend tests, browser parity checks, isolated wheel install, and 17 deployment checksums pass. Check-in awaits a requested commit; remote publication was not requested."
+
   - id: H-01
     title: Fill in every FILL IN line in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Publish the verified bundle only when this script is explicitly invoked.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+: "${CONNECT_SERVER:?Set CONNECT_SERVER in your environment.}"
+: "${CONNECT_API_KEY:?Set CONNECT_API_KEY in your environment.}"
+uv run --frozen --extra api python scripts/verify_manifest.py
+export BUNDLE_DIR="$ROOT/build/connect"
+export CONTENT_NAME="${CONTENT_NAME:-dockwatch-vanta-react}"
+export CONTENT_TITLE="${CONTENT_TITLE:-DockWatch · Team Vanta}"
+exec bash .github/scripts/connect-publish-async.sh

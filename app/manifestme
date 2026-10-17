@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Prepare a self-contained FastAPI bundle with the compiled React frontend.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+uv sync --frozen --extra api
+npm ci --prefix app/frontend
+npm run build --prefix app/frontend
+uv run --frozen --extra api python scripts/prepare_deploy.py
+uv run --frozen --extra api rsconnect write-manifest fastapi build/connect --entrypoint api:app --overwrite
+cp build/connect/manifest.json app/manifest.json
+uv run --frozen --extra api python scripts/verify_manifest.py

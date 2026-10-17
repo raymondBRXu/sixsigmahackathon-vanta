@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "locale": "C.UTF-8",
+  "metadata": {
+    "appmode": "python-fastapi",
+    "entrypoint": "api:app"
+  },
+  "python": {
+    "version": "3.12.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "26.2.1",
+      "package_file": "requirements.txt"
+    }
+  },
+  "environment": {
+    "python": {
+      "requires": "~=3.12.0"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "49c3642d3267f25b5ed680caac46a23a"
+    },
+    ".python-version": {
+      "checksum": "61939823fbcc7e8de3b61ab105331baf"
+    },
+    "api.py": {
+      "checksum": "3d1ae4048ef20fa694f80a63c1750ed9"
+    },
+    "data/disruption.csv": {
+      "checksum": "d0c6c153ed73ffc52399cfde37a258e9"
+    },
+    "data/edge_cases.csv": {
+      "checksum": "3956e8a8d9e20ab0d1e21cb5a3ddd93f"
+    },
+    "data/normal.csv": {
+      "checksum": "4297a7e522213ca5ef415595481f8c34"
+    },
+    "data/settings.json": {
+      "checksum": "d8b54b6f63bb3f01d71bd9540b9c7662"
+    },
+    "data/stations.json": {
+      "checksum": "678d02b40bf29f2477c4c2ff65cce00b"
+    },
+    "dockwatch/__init__.py": {
+      "checksum": "1eaa33f1bd8b1030dd43661aec3e587d"
+    },
+    "dockwatch/data.py": {
+      "checksum": "70353bf61dde441738cfb605160f3032"
+    },
+    "dockwatch/plots.py": {
+      "checksum": "bb901784327c4b5e53eb1c92745e6807"
+    },
+    "dockwatch/qc.py": {
+      "checksum": "cde73e529eb7d4aededd0551ebd83c36"
+    },
+    "frontend/dist/assets/index-Ct5EVQTH.js": {
+      "checksum": "08be4e7b8ca4f154a379c7e9415542c3"
+    },
+    "frontend/dist/assets/index-D5Pc6RTp.css": {
+      "checksum": "7b57a4a5807fc735e4499595d52edcf4"
+    },
+    "frontend/dist/assets/map-ipme06yU.js": {
+      "checksum": "093bb7f7186bb9b9c14f5b75a69c026a"
+    },
+    "frontend/dist/assets/maplibre-gl-worker-DxGNRm0a.mjs": {
+      "checksum": "a27b1c5a4644b64e920fc4b4bf5502c1"
+    },
+    "frontend/dist/index.html": {
+      "checksum": "c645ac52fe8be91551b17ecab1e4b436"
+    }
+  }
+}

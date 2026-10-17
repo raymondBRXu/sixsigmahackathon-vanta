@@ -183,10 +183,12 @@ are not modeled; station types and transfer intensities remain assumptions.
 Random streams are seeded separately by service-date index for reproducibility;
 that does **not** make the inventory observations independent. Inventories carry
 across dates, so serial dependence, drift and boundary concentration may arise.
-Normal and disruption share the entire baseline history exactly. H-03 must
-compare the **same station and clock hour across dates**, then review baseline
-suitability. This generator does not approve I-chart assumptions, calculate limits,
-or guarantee detection. No rate has been retuned to manufacture a suitable chart.
+Normal and disruption share the entire initial 25-day history exactly. The
+baseline/monitoring labels describe data generation only. The dashboard uses all
+hourly readings from a user-selected interval for exploratory Individuals limits,
+without baseline approval or automatic alarms. This generator does not establish
+I-chart assumptions or guarantee process stability. No rate has been retuned to
+manufacture a suitable chart.
 The dashboard can later inform human operators; this generator does not implement
 or assume their rebalancing decisions.
 
@@ -194,7 +196,7 @@ Additional fixtures in `edge_cases.csv`:
 
 | Planned time, default calendar | Values | Intended later software check |
 |---|---|---|
-| Every baseline date/hour, including 12:00 | `S20 = 15` | Constant later-hour baseline must remain unsupported for calibrated statistical alarms |
+| Every baseline date/hour, including 12:00 | `S20 = 15` | A constant selected interval retains CL = 15 but has no estimated UCL/LCL |
 | Sep 28, 09:00 | All 20 stations have 15 bikes | Balanced inventory: full fleet still 300 |
 | Sep 28, 10:00 | `S01`–`S10 = 0`; `S11`–`S20 = 30` | Polarized inventory: same 300 bikes and 50% network occupancy, but no station provides both pickup and return space |
 | Sep 28, 11:00 | `S01 = 6`, `S02 = 24`; `S03 = 5`, `S04 = 25`; `S05 = 0`, `S06 = 30`; remaining stations = 15 | Exact 20%/80% thresholds do not trigger strict low/high-stock rules; 5/25 do; valid empty/full observations |
@@ -222,7 +224,8 @@ inventory invariants before writing. No product SPC implementation is included.
 
 For real collection, station controllers would timestamp and export available-
 bike counts on the common hourly schedule. The operator would maintain IDs,
-coordinates and usable capacity, establish comparable service dates and baseline
-approval, and validate clock synchronization and data quality. Real networks may
+coordinates and usable capacity, declare the observation calendar, and validate
+clock synchronization and data quality. Any future calibrated monitoring system
+would also need a suitable stable reference period. Real networks may
 have bikes in transit, equipment faults, closures and missing messages; the current
 synthetic assumptions would require review before using the same model in service.
