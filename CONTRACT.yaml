@@ -25,6 +25,23 @@ spec: SPEC.md
 updated: "2026-10-17"
 
 tasks:
+  - id: H-15
+    title: Align SPEC with the current main implementation and organizer template
+    points: "Tool scope, statistical clarity and documentation"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: ["SPEC.md", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested by the user. Current main replaces earlier plans.
+      Document implemented behavior in the organizer's nine-section structure;
+      do not add features, restore old designs, or claim unverified deployment.
+    definition_of_done: >
+      SPEC has all nine organizer sections, no unfilled placeholders, valid
+      local file references, and formulas and behaviors consistent with current
+      code, README and demo. CONTRACT parses and git diff --check passes.
+    result: "Rewrote SPEC around current main in all nine organizer sections; verified no unfilled placeholders, existing local references, current implementation/demo consistency, valid YAML and clean git diff --check. Documentation only; no source changes, commit, push or remote deployment."
+
   - id: H-14
     title: Fix local publishing compatibility with macOS Bash 3.2
     points: "Protects reproducible local deployment"
