@@ -25,6 +25,24 @@ spec: SPEC.md
 updated: "2026-10-17"
 
 tasks:
+  - id: H-14
+    title: Fix local publishing compatibility with macOS Bash 3.2
+    points: "Protects reproducible local deployment"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: [".github/scripts/connect-publish-async.sh", "CONTRACT.yaml"]
+    notes: >
+      User explicitly requested repairing the identified mapfile compatibility
+      issue first. Use Bash 3.2-compatible manifest file collection and verify
+      locally with simulated API responses; actual remote deployment is separate.
+    definition_of_done: >
+      Bash syntax checks pass. The full publishing helper runs under macOS
+      /bin/bash with a local curl stub, creates the expected archive including
+      filenames with spaces and backslashes, and rejects empty or missing-file
+      manifests. Existing deployment tests and git diff --check pass.
+    result: "Locally verified on Bash 3.2.57: 5 simulated publishing checks pass, including reproduction of the original failure, create/update archive integrity, and empty/missing-file rejection. All 8 deployment tests and 17 bundle checksums pass; Bash syntax and git diff --check pass. No remote deployment or Git commit performed."
+
   - id: H-13
     title: Integrate the updated data branch with the React dashboard
     points: "Working datasets, reproducibility and validated dashboard behavior"
