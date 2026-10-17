@@ -1,5 +1,9 @@
 # DockWatch data: v5 scenarios in the current dashboard
 
+The [complete project Documentation](../docs/DOCUMENTATION.md#data-readme-and-complete-codebook)
+embeds this dataset context together with a full file/variable codebook, all
+station names, function parameters, usage instructions and numeric demonstrations.
+
 These are deliberately designed teaching and software-test fixtures for a fictional
 Ithaca-area bikeshare network. The two sources are `normal.csv` and `disruption.csv`.
 Neither is real telemetry, a calibrated demand model, or evidence of process stability.
