@@ -4,6 +4,7 @@ import csv
 import hashlib
 import importlib.util
 import json
+import shutil
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,7 +16,7 @@ from zoneinfo import ZoneInfo
 
 
 SCRIPT = Path(__file__).with_name("generate_data.py")
-SCENARIOS = ("normal", "disruption", "edge_cases")
+SCENARIOS = ("normal", "disruption")
 UTC = timezone.utc
 LOCAL = ZoneInfo("America/New_York")
 
@@ -137,14 +138,17 @@ class GeneratorTests(unittest.TestCase):
                     raise AssertionError(reader.fieldnames)
                 cls.rows[scenario] = list(reader)
             cls.events[scenario] = read_events(cls.output / (scenario + "_events.jsonl"))
+        cls.stations = json.loads((cls.output / "stations.json").read_text())
         spec = importlib.util.spec_from_file_location("dockwatch_generator_under_test", SCRIPT)
         cls.generator = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = cls.generator
         spec.loader.exec_module(cls.generator)
 
+
     @classmethod
     def tearDownClass(cls):
         cls.temp.cleanup()
+
 
     @classmethod
     def run_generator(cls, *arguments, expect_success=True):
@@ -156,6 +160,7 @@ class GeneratorTests(unittest.TestCase):
         if not expect_success and result.returncode == 0:
             raise AssertionError("Expected a configuration error")
         return result
+
 
     def test_calendar_and_station_configuration(self):
         dates = self.settings["service_dates"]
@@ -175,6 +180,7 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(set(station), {"station_id", "name", "area", "type", "latitude", "longitude", "capacity"})
             self.assertTrue(42.3 < station["latitude"] < 42.6)
             self.assertTrue(-76.6 < station["longitude"] < -76.3)
+
 
     def test_complete_bounded_snapshots_and_independent_fleet_replay(self):
         expected_ids = {"S%02d" % number for number in range(1, 21)}
@@ -213,6 +219,7 @@ class GeneratorTests(unittest.TestCase):
                     self.assertTrue(any(sum(values.values()) < 300 for values in snapshots.values()),
                                     "The default scenario must visibly include in-transit bikes")
 
+
     def test_night_and_weekend_rides_are_actual_events_not_resets(self):
         for scenario, events in self.events.items():
             with self.subTest(scenario=scenario):
@@ -221,6 +228,7 @@ class GeneratorTests(unittest.TestCase):
                              for event in events if event["event"] == kind]
                     self.assertTrue(any(t.hour < 7 or t.hour >= 22 for t in times), kind)
                     self.assertTrue(any(t.weekday() >= 5 for t in times), kind)
+
 
     def test_shared_baseline_and_changed_monitoring(self):
         self.assertEqual(self.rows["normal"][:7500], self.rows["disruption"][:7500])
@@ -232,73 +240,21 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(normal_history, disruption_history,
                          "Shared baseline includes latent bike ownership and ongoing trips")
 
-    def test_edge_examples_and_constant_later_hour(self):
-        values = {(row["timestamp"], row["station_id"]): int(row["bikes"]) for row in self.rows["edge_cases"]}
-        day = self.settings["monitoring_dates"][0]
-        balanced = [values[(day + "T09:00:00-04:00", "S%02d" % number)] for number in range(1, 21)]
-        polarized = [values[(day + "T10:00:00-04:00", "S%02d" % number)] for number in range(1, 21)]
-        self.assertEqual(balanced, [15] * 20)
-        self.assertEqual(polarized, [0] * 10 + [30] * 10)
-        thresholds = [values[(day + "T11:00:00-04:00", "S%02d" % number)] for number in range(1, 21)]
-        self.assertEqual(thresholds, [6, 24, 5, 25, 0, 30] + [15] * 14)
-        later_hour = [values[(day + "T12:00:00-04:00", "S20")] for day in self.settings["baseline_dates"]]
-        self.assertEqual(later_hour, [15] * 25)
-        self.assertTrue(all(int(row["bikes"]) == 15 for row in self.rows["edge_cases"][:7500]
-                            if row["station_id"] == "S20"))
-        boundary = instant(day + "T07:00:00-04:00")
-        self.assertTrue(all(event["station_id"] != "S20" and event.get("destination_id") != "S20"
-                            for event in self.events["edge_cases"]
-                            if instant(event["timestamp"]) < boundary),
-                        "The fixed S20 baseline must also be excluded from reroutes")
-        edge_audit = {instant(record["timestamp"]): record for record in self.metadata["snapshot_audit"]["edge_cases"]}
-        for hour in (9, 10, 11):
-            record = edge_audit[instant(day + "T%02d:00:00-04:00" % hour)]
-            self.assertEqual((record["docked"], record["in_transit"]), (300, 0))
-
-    def test_separate_runs_match_all_byte_for_byte(self):
-        output = Path(self.temp.name) / "separate"
-        for scenario in reversed(SCENARIOS):
-            self.run_generator("--scenario", scenario, "--output-dir", str(output))
-        for filename in [name + suffix for name in SCENARIOS for suffix in (".csv", "_events.jsonl")] + ["stations.json", "settings.json", "generation_metadata.json"]:
-            self.assertEqual((output / filename).read_bytes(), (self.output / filename).read_bytes(), filename)
 
     def test_repeated_run_is_identical(self):
         before = {path.name: path.read_bytes() for path in self.output.iterdir()}
         self.run_generator("--output-dir", str(self.output))
         self.assertEqual(before, {path.name: path.read_bytes() for path in self.output.iterdir()})
 
-    def test_prevent_mixed_configuration(self):
-        output = Path(self.temp.name) / "guard"
-        self.run_generator("--scenario", "normal", "--output-dir", str(output))
-        result = self.run_generator("--scenario", "disruption", "--seed", "10", "--output-dir", str(output), expect_success=False)
-        self.assertIn("different configuration", result.stderr)
-        self.assertFalse((output / "disruption.csv").exists())
-        self.run_generator("--seed", "10", "--output-dir", str(output))
-        self.assertNotEqual((output / "normal.csv").read_bytes(), (self.output / "normal.csv").read_bytes())
-
-    def test_changed_station_anchors_cannot_mix_with_existing_csvs(self):
-        output = Path(self.temp.name) / "anchor_guard"
-        self.run_generator("--output-dir", str(output))
-        altered = Path(self.temp.name) / "altered_generator"
-        altered.mkdir()
-        (altered / SCRIPT.name).write_bytes(SCRIPT.read_bytes())
-        anchors = json.loads(SCRIPT.with_name("station_anchors.json").read_text())
-        anchors[0]["latitude"] += 0.001
-        (altered / "station_anchors.json").write_text(json.dumps(anchors))
-        result = subprocess.run(
-            [sys.executable, str(altered / SCRIPT.name), "--scenario", "normal", "--output-dir", str(output)],
-            capture_output=True, text=True,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("different configuration", result.stderr)
 
     def test_invalid_start_date_is_clear_error(self):
         result = self.run_generator("--start-date", "2026-08-23", "--output-dir", str(Path(self.temp.name) / "bad"), expect_success=False)
         self.assertIn("weekday", result.stderr)
 
+
     def test_alternate_calendar_handles_daylight_saving_change(self):
         output = Path(self.temp.name) / "dst"
-        self.run_generator("--scenario", "normal", "--start-date", "2026-10-26", "--output-dir", str(output))
+        self.run_generator("--start-date", "2026-10-26", "--output-dir", str(output))
         with (output / "normal.csv").open(newline="") as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(rows[0]["timestamp"], "2026-10-26T07:00:00-04:00")
@@ -314,23 +270,6 @@ class GeneratorTests(unittest.TestCase):
         self.assertTrue(any(instant(e["timestamp"]).astimezone(LOCAL).utcoffset().total_seconds() == -5 * 3600
                             for e in events))
 
-    def test_modified_sibling_is_not_silently_mixed(self):
-        output = Path(self.temp.name) / "modified"
-        self.run_generator("--scenario", "normal", "--output-dir", str(output))
-        with (output / "normal.csv").open("a") as handle:
-            handle.write("modified\n")
-        result = self.run_generator("--scenario", "edge_cases", "--output-dir", str(output), expect_success=False)
-        self.assertIn("recorded hash", result.stderr)
-        self.assertFalse((output / "edge_cases.csv").exists())
-
-    def test_modified_sibling_event_log_is_not_silently_mixed(self):
-        output = Path(self.temp.name) / "modified_events"
-        self.run_generator("--scenario", "normal", "--output-dir", str(output))
-        with (output / "normal_events.jsonl").open("a") as handle:
-            handle.write('{"tampered":true}\n')
-        result = self.run_generator("--scenario", "edge_cases", "--output-dir", str(output), expect_success=False)
-        self.assertIn("recorded hash", result.stderr)
-        self.assertFalse((output / "edge_cases.csv").exists())
 
     def test_exported_hashes_match_actual_csvs_and_event_logs(self):
         for scenario in SCENARIOS:
@@ -339,6 +278,7 @@ class GeneratorTests(unittest.TestCase):
                 expected = self.metadata[table][filename]
                 actual = hashlib.sha256((self.output / filename).read_bytes()).hexdigest()
                 self.assertEqual(actual, expected["sha256"], filename)
+
 
     def test_small_ride_crosses_midnight_without_teleporting(self):
         stations = json.loads((self.output / "stations.json").read_text())
@@ -363,6 +303,7 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(counts, simulator.snapshot())
         self.assertFalse(moving)
 
+
     def test_nonpositive_ride_time_is_rejected(self):
         stations = json.loads((self.output / "stations.json").read_text())
         start = datetime(2026, 10, 16, 10, 0, tzinfo=LOCAL)
@@ -371,6 +312,7 @@ class GeneratorTests(unittest.TestCase):
                 simulator = self.generator.Simulator(stations, start, seed=5300)
                 with self.assertRaises(ValueError):
                     simulator.schedule_departure(start, "S01", "S02", flow="test", duration_seconds=duration)
+
 
     def test_full_destination_reroutes_with_extra_time_and_same_bike(self):
         stations = json.loads((self.output / "stations.json").read_text())
@@ -407,38 +349,229 @@ class GeneratorTests(unittest.TestCase):
         self.assertEqual(counts, simulator.snapshot())
         self.assertFalse(moving)
 
-    def test_settings_exclude_generation_only_labels(self):
-        self.assertEqual(set(self.settings), {"schema_version", "timezone", "service_dates", "baseline_dates", "monitoring_dates", "hours", "station_ids", "collection_mode"})
-        metadata = json.loads((self.output / "generation_metadata.json").read_text())
-        self.assertTrue(metadata["synthetic"])
-        self.assertEqual(metadata["configuration"]["seed"], 5300)
-        self.assertTrue(metadata["edge_fixtures"])
-        self.assertEqual(metadata["configuration"]["generator_version"], 4)
 
-    def test_student_flow_audit(self):
-        audits = self.metadata["transfer_audit"]
-        for flow, result in audits["normal"]["baseline"].items():
-            for key in ("planned_transfers", "successful_transfers"):
-                self.assertEqual(result[key], audits["disruption"]["baseline"][flow][key])
-        # Later arrivals/reroutes can differ after the shared departure history
-        # branches, even when attributed back to a baseline journey in metadata.
-        required_flows = {"background", "morning_to_class", "midday_exchange", "afternoon_return", "evening_return"}
-        boundary = instant(self.settings["monitoring_dates"][0] + "T07:00:00-04:00")
-        for scenario in SCENARIOS:
-            for phase in ("baseline", "monitoring"):
-                self.assertTrue(set(audits[scenario][phase]).issuperset(required_flows))
-                actual = Counter(event["flow"] for event in self.events[scenario]
-                                 if event["event"] == "departure" and
-                                 ((instant(event["timestamp"]) < boundary) == (phase == "baseline")))
-                self.assertTrue(set(actual).issubset(audits[scenario][phase]))
-                for flow, result in audits[scenario][phase].items():
-                    self.assertGreaterEqual(result["successful_transfers"], 0)
-                    self.assertLessEqual(result["successful_transfers"], result["planned_transfers"])
-                    self.assertEqual(result["successful_transfers"], actual[flow],
-                                     (scenario, phase, flow, "Count actual departures, not intended attempts"))
-        normal = audits["normal"]["monitoring"]["morning_to_class"]["planned_transfers"]
-        abnormal = audits["disruption"]["monitoring"]["morning_to_class"]["planned_transfers"]
-        self.assertGreater(abnormal, normal)
+    def test_only_two_csvs_and_audit_reports(self):
+        self.assertEqual(sorted(p.name for p in self.output.glob('*.csv')), ['disruption.csv', 'normal.csv'])
+        report = json.loads((self.output / 'validation.json').read_text())
+        self.assertEqual(report['status'], 'passed')
+        self.assertFalse(report['review_automatically_approved'])
+        self.assertEqual(report['shared_baseline_rows'], 7500)
+        self.assertTrue(report['shared_prechange_events_and_pending_rides'])
+        self.assertTrue((self.output / 'demo_guide.md').is_file())
+        self.assertEqual((self.output / 'README.md').read_bytes(), SCRIPT.with_name('README.v5.md').read_bytes())
+
+    def test_data_only_snapshot_fallback_integrity_and_app_precedence(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            folder = root / 'data'
+            folder.mkdir()
+            script = folder / 'generate_data.py'
+            snapshot = folder / '_qc_snapshot.py'
+            shutil.copy2(SCRIPT, script)
+            shutil.copy2(SCRIPT.with_name('_qc_snapshot.py'), snapshot)
+            spec = importlib.util.spec_from_file_location('isolated_publication_generator', script)
+            generator = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(generator)
+            self.assertEqual(Path(generator.load_qc().__file__).resolve(), snapshot.resolve())
+            self.assertEqual(hashlib.sha256(snapshot.read_bytes()).hexdigest(), generator.QC_SNAPSHOT_SHA256)
+            original = snapshot.read_bytes()
+            snapshot.write_bytes(original + b'\n# altered snapshot\n')
+            with self.assertRaisesRegex(ValueError, 'integrity check'):
+                generator.load_qc()
+            (root / 'app').mkdir()
+            app_detector = root / 'app' / 'qc.py'
+            app_detector.write_bytes(original)
+            self.assertEqual(Path(generator.load_qc().__file__).resolve(), app_detector.resolve())
+            app_detector.unlink()
+            snapshot.unlink()
+            with self.assertRaisesRegex(ValueError, 'requires app/qc.py'):
+                generator.load_qc()
+
+    def test_normal_actual_detector_has_no_candidate_or_baseline_warning(self):
+        qc = self.generator.load_qc()
+        rows = self.rows['normal']
+        by_series = defaultdict(list)
+        for row in rows:
+            parsed = datetime.fromisoformat(row['timestamp'])
+            by_series[(row['station_id'], parsed.hour)].append({
+                'bikes': int(row['bikes']), 'date': parsed.date().isoformat(), 'timestamp': row['timestamp']})
+        self.assertEqual(len(by_series), 300)
+        for key, points in by_series.items():
+            with self.subTest(station_hour=key):
+                self.assertTrue(all(6 <= p['bikes'] <= 24 for p in points))
+                limits = qc.i_chart_limits([p['bikes'] for p in points[:25]])
+                self.assertEqual((limits['n'], limits['pairs']), (25, 24))
+                self.assertGreater(limits['sigma'], 0)
+                self.assertEqual(qc.detect_rules(points[25:], limits), [])
+                self.assertEqual(qc.baseline_diagnostics(points[:25], 30, limits)['warnings'], [])
+
+    def test_operational_fixtures_use_real_dashboard_rules(self):
+        qc = self.generator.load_qc()
+        result = qc.build_dashboard(self.rows['disruption'], self.stations, self.settings,
+                                    '2026-09-28T09:00:00-04:00', 'S01', 9)
+        stations = {s['station_id']: s for s in result['operations']['stations']}
+        actions = {a['station_id']: a for a in result['operations']['actions']}
+        expected = {'S01': (0, 'empty', 'P1', 'add', 15), 'S06': (30, 'full', 'P1', 'remove', 15),
+                    'S02': (3, 'low', 'P2', 'add', 12), 'S07': (27, 'high', 'P2', 'remove', 12)}
+        for sid, (bikes, status, priority, direction, quantity) in expected.items():
+            self.assertEqual((stations[sid]['bikes'], stations[sid]['status']), (bikes, status))
+            self.assertEqual((actions[sid]['priority'], actions[sid]['direction'], actions[sid]['quantity']),
+                             (priority, direction, quantity))
+        for sid, bikes in [('S03', 6), ('S08', 24), ('S05', 15)]:
+            self.assertEqual(stations[sid]['bikes'], bikes)
+            self.assertNotIn(sid, actions)
+        self.assertEqual(len(actions), len(result['operations']['actions']))
+        self.assertEqual(result['operations']['kpis']['coverage'], 1.0)
+
+    def test_planted_rules_are_causal_and_statistics_only_does_not_dispatch(self):
+        qc = self.generator.load_qc()
+        fixtures = [('S14', 12, '2026-10-07', '2026-10-06', 'eight_same_side'),
+                    ('S17', 14, '2026-10-05', '2026-10-02', 'six_trend')]
+        for sid, hour, trigger, before, rule in fixtures:
+            with self.subTest(rule=rule):
+                previous = qc.station_hour_analysis(self.rows['disruption'], self.stations, self.settings,
+                              before + 'T%02d:00:00-04:00' % hour, sid, hour)
+                self.assertFalse(any(e['rule'] == rule for e in previous['events']))
+                current = qc.build_dashboard(self.rows['disruption'], self.stations, self.settings,
+                              trigger + 'T%02d:00:00-04:00' % hour, sid, hour)
+                analysis = current['analysis']
+                self.assertTrue(analysis['baseline']['eligible'])
+                self.assertEqual(analysis['status'], 'unreviewed')
+                self.assertTrue(any(e['rule'] == rule and e['date'] == trigger for e in analysis['events']))
+                self.assertTrue(all(e['kind'] == 'exploratory_pattern' for e in analysis['events']))
+                self.assertNotIn(sid, {a['station_id'] for a in current['operations']['actions']})
+                self.assertEqual(previous['limits'], analysis['limits'])
+                truncated = [r for r in self.rows['disruption'] if instant(r['timestamp']) <= instant(before + 'T%02d:00:00-04:00' % hour)]
+                self.assertEqual(previous, qc.station_hour_analysis(truncated, self.stations, self.settings,
+                                 before + 'T%02d:00:00-04:00' % hour, sid, hour))
+
+    def test_disruption_all_three_rules_and_mixed_operational_states(self):
+        report = json.loads((self.output / 'validation.json').read_text())['scenarios']['disruption']
+        self.assertTrue(all(report['candidate_rule_counts'].values()))
+        self.assertGreater(report['statistics_only_events'], 0)
+        self.assertEqual(report['eligible_strata'], 300)
+        self.assertEqual(report['baseline_diagnostic_warnings'], 0)
+        values = {int(r['bikes']) for r in self.rows['disruption']}
+        self.assertTrue({0, 3, 5, 6, 15, 24, 25, 27, 30}.issubset(values))
+        self.assertTrue(all(0 <= v <= 30 for v in values))
+        by_time = defaultdict(list)
+        for row in self.rows['disruption'][7500:]:
+            by_time[row['timestamp']].append(int(row['bikes']))
+        self.assertTrue(all(any(6 <= v <= 24 for v in snapshot) for snapshot in by_time.values()))
+
+    def test_backups_preserve_old_edge_files_and_unrelated_files(self):
+        output = Path(self.temp.name) / 'replace_old'
+        output.mkdir()
+        prior = {'normal.csv': b'oldnormal\n', 'disruption.csv': b'olddisruption\n',
+                 'edge_cases.csv': b'oldedge\n', 'edge_cases_events.jsonl': b'{"old":true}\n',
+                 'README.md': b'oldcodebook\n'}
+        for name, content in prior.items():
+            (output / name).write_bytes(content)
+        (output / 'my_notes.txt').write_text('keep my notes')
+        result = self.run_generator('--output-dir', str(output))
+        self.assertIn('backed up:', result.stdout)
+        backups = list((output.parent / '.dockwatch-data-backups').glob('replace_old-*'))
+        self.assertEqual(len(backups), 1)
+        for name, content in prior.items():
+            self.assertEqual((backups[0] / name).read_bytes(), content)
+        self.assertEqual(sorted(p.name for p in output.glob('*.csv')), ['disruption.csv', 'normal.csv'])
+        self.assertFalse((output / 'edge_cases_events.jsonl').exists())
+        self.assertEqual((output / 'my_notes.txt').read_text(), 'keep my notes')
+
+    def test_unknown_csv_is_not_deleted_or_mixed(self):
+        output = Path(self.temp.name) / 'unrelated_csv'
+        output.mkdir()
+        (output / 'research.csv').write_text('important\n')
+        result = self.run_generator('--output-dir', str(output), expect_success=False)
+        self.assertIn('unrelated CSVs', result.stderr)
+        self.assertEqual((output / 'research.csv').read_text(), 'important\n')
+        self.assertFalse((output / 'normal.csv').exists())
+
+    def test_alternate_seed_is_reproducible_and_retains_contract(self):
+        output = Path(self.temp.name) / 'seed10'
+        self.run_generator('--seed', '10', '--output-dir', str(output))
+        self.assertNotEqual((output / 'normal.csv').read_bytes(), (self.output / 'normal.csv').read_bytes())
+        report = json.loads((output / 'validation.json').read_text())
+        self.assertEqual(report['scenarios']['normal']['candidate_events'], 0)
+        self.assertEqual(report['scenarios']['normal']['operational_warning_rows'], 0)
+        self.assertEqual(report['scenarios']['normal']['eligible_strata'], 300)
+        self.assertTrue(all(report['scenarios']['disruption']['candidate_rule_counts'].values()))
+        before = {p.name: p.read_bytes() for p in output.iterdir()}
+        self.run_generator('--seed', '10', '--output-dir', str(output))
+        self.assertEqual(before, {p.name: p.read_bytes() for p in output.iterdir()})
+
+    def test_settings_exclude_planted_labels_and_review_approval(self):
+        self.assertEqual(set(self.settings), {'schema_version', 'timezone', 'service_dates', 'baseline_dates',
+                         'monitoring_dates', 'hours', 'station_ids', 'collection_mode'})
+        self.assertTrue(self.metadata['synthetic'])
+        self.assertTrue(self.metadata['not_detector_input'])
+        self.assertEqual(self.metadata['configuration']['generator_version'], 5)
+        self.assertIn('designed', self.metadata['provenance'])
+        self.assertIn('fixture_selection_attempts_by_corridor', self.metadata)
+
+    def test_commute_direction_night_intensity_and_cross_hour_rides(self):
+        for scenario, events in self.events.items():
+            homes = {'S01','S02','S03','S04','S05','S14','S17','S18'}
+            academic = {'S06','S07','S08','S09','S10','S12','S11','S13'}
+            morning_forward = morning_reverse = evening_forward = evening_reverse = 0
+            nights = peaks = 0
+            crossing_midnight = crossing_0700 = 0
+            for event in events:
+                if event['event'] != 'departure':
+                    continue
+                stamp = datetime.fromisoformat(event['timestamp']).astimezone(LOCAL)
+                due = datetime.fromisoformat(event['arrival_due']).astimezone(LOCAL)
+                if stamp.date() != due.date(): crossing_midnight += 1
+                if stamp.hour == 6 and due.hour == 7: crossing_0700 += 1
+                if stamp.hour < 6: nights += 1
+                if stamp.weekday() < 5 and stamp.hour in (7, 8): peaks += 1
+                if stamp.weekday() >= 5: continue
+                source, dest = event['station_id'], event['destination_id']
+                if 7 <= stamp.hour < 9:
+                    morning_forward += source in homes and dest in academic
+                    morning_reverse += source in academic and dest in homes
+                if 15 <= stamp.hour < 19:
+                    evening_forward += source in academic and dest in homes
+                    evening_reverse += source in homes and dest in academic
+            with self.subTest(scenario=scenario):
+                self.assertGreater(morning_forward, morning_reverse)
+                self.assertGreater(evening_forward, evening_reverse)
+                self.assertGreater(peaks / (40 * 2), nights / (54 * 6))
+                self.assertGreater(crossing_midnight, 0)
+                self.assertGreater(crossing_0700, 0)
+                seven = [int(r['bikes']) for r in self.rows[scenario][300:] if datetime.fromisoformat(r['timestamp']).hour == 7]
+                self.assertGreater(len(set(seven)), 3)
+
+    def test_replay_rejects_unlogged_stock_edit(self):
+        rows = [(r['timestamp'], r['station_id'], int(r['bikes'])) for r in self.rows['normal']]
+        rows[400] = (rows[400][0], rows[400][1], rows[400][2] + 1)
+        with self.assertRaisesRegex(ValueError, 'replay disagrees'):
+            self.generator.replay_and_validate(rows, self.events['normal'], self.metadata['snapshot_audit']['normal'])
+
+    def test_off_hours_forward_riders_do_not_read_tomorrows_stock(self):
+        generator = self.generator
+        days = [datetime.fromisoformat(day).date() for day in self.settings['service_dates']]
+        profiles, attempts = generator.design_normal_profiles(5300, days, generator.load_qc())
+        exports = generator.snapshot_plans(profiles, days, 'normal', 5300, LOCAL)
+        original = generator.all_hour_plans(exports, profiles)
+        future = instant(days[1].isoformat() + 'T07:00:00-04:00')
+        altered_exports = dict(exports)
+        altered_exports[future] = [(15, 0, 0)] * 10
+        altered = generator.all_hour_plans(altered_exports, profiles)
+        self.assertEqual({t: v for t, v in original.items() if t < future},
+                         {t: v for t, v in altered.items() if t < future})
+        # Check every quiet hour, including each 07:00, against its previous
+        # actual settled bike state. Only an independently planned -1/0/+1
+        # rider increment may change it; no target-directed return is possible.
+        service_dates = set(days)
+        for profile in profiles:
+            prior = None
+            for stamp, plan in sorted(profile.items()):
+                local = stamp.astimezone(LOCAL)
+                if prior is not None and not (local.date() in service_dates and 8 <= local.hour <= 21):
+                    settled = prior[0] + prior[1] * (1 if prior[2] else -1)
+                    self.assertIn(plan[0] - settled, (-1, 0, 1))
+                prior = plan
 
 
 if __name__ == "__main__":
