@@ -1,7 +1,7 @@
 {
-  "calendar_assumption": "All listed weekdays are fictional comparable service dates, including holidays; no real Cornell or Ithaca calendar is inferred.",
+  "calendar_assumption": "Forty fictional comparable weekdays, including holidays; not a real Cornell operating calendar.",
   "configuration": {
-    "generator_version": 3,
+    "generator_version": 5,
     "hours": [
       7,
       8,
@@ -24,138 +24,6 @@
     "stations_sha256": "e1ab030a6150cb4379a270682a23631c2dd73a938cbc8f55c67d355407fd713f",
     "timezone": "America/New_York"
   },
-  "edge_fixtures": [
-    {
-      "bikes": 15,
-      "case": "constant later-hour baseline",
-      "dates": [
-        "2026-08-24",
-        "2026-08-25",
-        "2026-08-26",
-        "2026-08-27",
-        "2026-08-28",
-        "2026-08-31",
-        "2026-09-01",
-        "2026-09-02",
-        "2026-09-03",
-        "2026-09-04",
-        "2026-09-07",
-        "2026-09-08",
-        "2026-09-09",
-        "2026-09-10",
-        "2026-09-11",
-        "2026-09-14",
-        "2026-09-15",
-        "2026-09-16",
-        "2026-09-17",
-        "2026-09-18",
-        "2026-09-21",
-        "2026-09-22",
-        "2026-09-23",
-        "2026-09-24",
-        "2026-09-25"
-      ],
-      "hours": [
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21
-      ],
-      "station_id": "S20"
-    },
-    {
-      "bikes_by_station_order": [
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15
-      ],
-      "case": "balanced network",
-      "date": "2026-09-28",
-      "hour": 9
-    },
-    {
-      "bikes_by_station_order": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30,
-        30
-      ],
-      "case": "polarized network",
-      "date": "2026-09-28",
-      "hour": 10
-    },
-    {
-      "bikes_by_station_order": [
-        6,
-        24,
-        5,
-        25,
-        0,
-        30,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15
-      ],
-      "case": "exact and near stock thresholds; empty/full",
-      "date": "2026-09-28",
-      "hour": 11
-    }
-  ],
   "expected_csvs": {
     "disruption.csv": {
       "baseline_rows": 7500,
@@ -163,15 +31,7 @@
       "coverage": 1.0,
       "monitoring_rows": 4500,
       "rows": 12000,
-      "sha256": "2e5ae9671b85ca1a56fddfd8468724777579eee919ba0258a0b8fc5f2e17efe7"
-    },
-    "edge_cases.csv": {
-      "baseline_rows": 7500,
-      "complete_snapshots": 600,
-      "coverage": 1.0,
-      "monitoring_rows": 4500,
-      "rows": 12000,
-      "sha256": "a8aef765f8dbc952584d277320102793a2609452579a883b022898565f3a029f"
+      "sha256": "ef2a5a0327302880311447d6bfeaa6e1799968f1d713d1aa9e7b114c8972d0d9"
     },
     "normal.csv": {
       "baseline_rows": 7500,
@@ -179,39 +39,6108 @@
       "coverage": 1.0,
       "monitoring_rows": 4500,
       "rows": 12000,
-      "sha256": "5a9d0fc207e3fb6fa9ed824831569bf12c9a8179b84322176460f97eff3d69d1"
+      "sha256": "aa878cc98159b8c9119cf5e34dd51e582c730d38597902f767f7b77dcde4a586"
     }
   },
-  "geography": "Twelve anchors in Cornell core and eight surrounding anchors; official Cornell venue coordinates and TCAT GTFS20260922 transit coordinates. Geographic visual review and docking-site feasibility are separate; no existing bikeshare facilities are claimed.",
+  "expected_event_logs": {
+    "disruption_events.jsonl": {
+      "events": 29310,
+      "sha256": "4ec0ecd805be0cff54b4d39c64e64422404556196f4c95f8e186ddddda20f52a"
+    },
+    "normal_events.jsonl": {
+      "events": 22874,
+      "sha256": "9f16115802a113a9af9b9ec42e84ba82620a9abc8a3c8a8c737ea048d20b12ef"
+    }
+  },
+  "final_in_transit": {
+    "disruption": 4,
+    "normal": 4
+  },
+  "fixture_selection_attempts_by_corridor": [
+    6,
+    9,
+    63,
+    92,
+    94,
+    84,
+    26,
+    14,
+    91,
+    87
+  ],
   "limitations": [
-    "No missing readings, sensor failures, closures or unusable bikes/docks in any scenario.",
-    "Inventory persists across service dates; same-hour sequences may have serial dependence, drift or boundary concentration and require independent suitability review.",
-    "No operator dispatch, nightly rebalancing, overnight trips or weekend trips are simulated.",
-    "Normal means regular simulation, not guaranteed absence of inventory warnings or statistical signals.",
-    "Disruption is an operational redistribution, not equipment failure; detection must be evaluated independently.",
-    "No SPC implementation or baseline suitability approval is supplied by this generator."
+    "Finite intentionally constructed teaching examples; zero normal alerts is not a general probability claim.",
+    "No real demand, calibrated routing, hills, causal claims or dispatcher intervention is modeled.",
+    "CSV snapshots do not reveal attempted rentals, failed trips or exact downtime.",
+    "The generator validates using app/qc.py but does not implement a second detector or approve any baseline.",
+    "Pattern selection uses complete synthetic candidate schedules offline; application scoring remains causal and uses no future observations."
   ],
   "model": {
-    "afternoon_at_15_16_17": "6 + uniform integer 0..4 attempts each hour, academic to residential",
-    "background_attempts": "10 at 08/09/10/17/18/19; 6 at other hours after 07; symmetric distance-weighted station pairs",
-    "capacity_handling": "Transfers require a bike at the source and a free position at the destination",
+    "capacity_handling": "No departure from an empty station; every arrival checks capacity and reroutes with added positive riding time if full",
     "capacity_per_station": 30,
-    "cross_date_continuity": "Each station's next planned date 07:00 inventory equals its previous planned date 21:00 inventory, including Friday-to-Monday",
-    "disruption_monitoring_morning_at_08_09_10": "48 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
-    "distance_pair_weight": "1 / (1 + straight-line distance in km), at most 1; not road distance, slope or travel time",
-    "edge_adjustments": "Artificial software fixtures during daytime hours only, not operator dispatch or a claimed natural commuting process",
-    "evening_at_18_19_20_21": "9 + uniform integer 0..4 attempts each hour, academic/mixed/transport to residential, including library return",
-    "initial_allocation": "15 bikes at every station only at 07:00 on the first service date; no daily reset or operator redistribution",
-    "midday_at_11_12_13_14": "6 + uniform integer 0..4 attempts each hour among academic/mixed/transport stations",
-    "normal_morning_at_08_09_10": "16 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
-    "outside_observation_window": "No movements are modeled outside 07:00-21:00 or on unlisted weekend days; inventory is held unchanged",
-    "sensors": "All automatic readings accurate, complete and on the scheduled hour",
+    "corridor_limitation": "Ten independent illustrative rider corridors; deliberately restricted OD patterns, not citywide routing or measured demand",
+    "corridors": [
+      [
+        "S01",
+        "S06"
+      ],
+      [
+        "S02",
+        "S07"
+      ],
+      [
+        "S03",
+        "S08"
+      ],
+      [
+        "S04",
+        "S09"
+      ],
+      [
+        "S05",
+        "S10"
+      ],
+      [
+        "S14",
+        "S12"
+      ],
+      [
+        "S17",
+        "S11"
+      ],
+      [
+        "S18",
+        "S13"
+      ],
+      [
+        "S19",
+        "S15"
+      ],
+      [
+        "S20",
+        "S16"
+      ]
+    ],
+    "duration_seconds": "max(300, ceil(straight-line_km * 1.3 / 12 * 3600 + uniform_integer(180,480)))",
+    "initial_allocation": "15 bikes per station at the first 07:00 only; no later reset, operator dispatch or nighttime rebalancing",
+    "initial_bike_ids": "B001-B015 at S01, then successive blocks of fifteen through B286-B300 at S20",
+    "itinerary_construction": "Seeded finite hourly rider schedules, accepted using the unchanged app detector; actual individual departures and arrivals realize every snapshot, never CSV clipping or stock assignment",
+    "late_rides": "Some riders depart before an hourly reading and return 120–180 seconds after it; they are included in the in-transit fleet at that reading",
+    "normal_profile": "Main campus home-side designed full-stock profile08:00–21:00 (07:00 entry ignored; inherited from overnight rides) before late departures: [17, 14, 11, 10, 11, 12, 11, 12, 13, 14, 15, 16, 17, 17, 17]; seeded day offsets and hourly jitter; no-alert fixture selection is explicitly intentional",
+    "off_hours": "Sparse independently seeded overnight/weekend riders evolve forward from actual settled stocks; 07:00 inherits their result, never a preselected morning target or stock15 reset",
+    "sensors": "Accurate complete automatic readings; no missingness or sensor-failure simulation",
+    "shared_history": "Same rider events and pending trips through first monitoring day07:00; changed schedules begin afterward",
     "total_bikes": 300,
-    "total_positions": 600,
-    "transfer": "Instantaneous single-bike movement, no in-transit inventory or travel times"
+    "total_positions": 600
   },
   "not_detector_input": true,
-  "provenance": "Inventories, bikeshare stations and flows are entirely simulated; geographic landmark anchors are real official-source coordinates. No real sensor readings, demand observations or trip records.",
+  "provenance": "Entirely designed synthetic rider itineraries at real geographic landmark anchors; no observed customer demand or sensor records.",
+  "snapshot_audit": {
+    "disruption": [
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-24T07:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-08-24T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-24T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-24T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-24T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T12:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-24T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-24T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-24T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-24T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-24T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-24T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-24T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-25T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-25T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-25T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-25T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T11:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-25T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-25T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-25T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-25T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T09:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-26T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-26T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-26T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-26T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-26T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T18:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-26T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-26T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-26T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-27T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T10:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T11:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-08-27T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-27T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-28T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-28T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-28T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-28T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-31T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-31T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-01T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-01T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-01T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T11:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-01T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T13:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-01T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-01T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-01T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-02T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-02T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-02T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-02T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-02T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T20:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T07:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-03T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-03T17:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-03T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-03T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-04T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-04T08:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-04T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-04T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-04T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-04T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T15:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-04T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-04T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-04T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-04T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-07T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-07T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-07T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-07T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-07T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T16:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-07T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-07T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-07T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-07T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-08T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-08T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-08T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-09T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-09T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T12:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-09T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-09T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-09T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-10T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-10T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-10T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-10T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T14:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-10T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-10T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-10T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-10T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-10T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-11T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-11T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-11T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-11T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-11T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-14T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-14T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-14T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-14T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T12:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-14T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-14T15:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-14T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-14T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-15T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-15T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T13:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-15T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-15T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-15T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-15T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-15T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-15T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-16T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-16T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-16T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-16T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-16T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-16T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-16T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-16T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-17T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-17T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T16:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-17T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-17T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-17T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-18T07:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-18T08:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-18T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-18T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-21T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-21T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-21T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-21T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-21T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-21T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-21T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-22T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-22T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-22T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-22T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-22T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-22T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-22T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T18:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-22T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-23T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-23T08:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-23T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-23T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-23T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T07:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-24T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-24T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-24T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-24T17:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-24T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-24T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-25T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-25T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-25T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-25T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-25T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-25T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-28T07:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T08:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-28T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-28T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-28T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-29T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-29T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-29T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-29T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-29T18:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-29T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-30T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-30T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T15:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-30T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-30T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-30T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-01T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-01T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-01T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-01T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-01T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-01T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-01T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-01T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-01T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-01T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-02T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-02T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-02T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-02T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-02T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-02T14:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-02T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-02T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-02T17:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-02T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-02T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-05T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-05T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-05T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-05T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-05T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-05T18:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-05T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-05T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-06T07:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-06T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-06T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-06T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-06T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-06T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-06T14:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-06T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-06T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-06T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-07T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-07T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-07T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-07T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-07T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-07T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-07T14:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-07T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-07T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-07T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-07T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-07T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-08T07:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-08T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-08T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-08T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-08T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-08T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-08T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-08T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-08T18:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-08T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-08T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-09T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-09T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-09T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-09T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-09T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-09T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T16:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-09T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-09T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T07:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-12T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-12T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-12T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-12T17:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-12T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-13T07:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-13T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-13T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-13T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-14T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-14T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-14T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T14:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T15:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-14T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T17:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-14T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-14T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-14T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-15T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-15T08:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-15T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-15T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-15T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-15T12:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-15T13:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-15T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-15T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-15T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-15T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-15T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-15T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-15T20:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-15T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-16T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-16T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T11:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-16T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-16T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-16T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-16T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T21:00:00-04:00"
+      }
+    ],
+    "normal": [
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-24T07:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-08-24T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-24T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-24T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-24T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T12:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-24T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-24T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-24T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-24T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-24T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-24T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-24T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-24T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-25T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-25T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-25T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-25T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T11:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-25T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-25T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-25T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-25T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-25T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-25T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T09:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-26T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-26T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-26T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-26T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-26T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-26T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-26T18:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-26T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-26T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-26T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-08-27T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T10:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T11:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-27T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-08-27T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-27T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-27T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-27T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-08-28T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-28T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-28T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-28T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-28T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-08-28T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-28T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-08-31T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-08-31T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-08-31T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-08-31T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-08-31T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-08-31T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-01T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-01T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-01T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T11:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-01T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T13:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-01T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-01T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-01T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-01T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-01T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-02T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-02T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-02T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-02T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-02T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-02T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-02T20:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-02T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T07:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-03T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-03T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-03T17:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-03T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-03T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-03T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-03T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-04T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-04T08:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-04T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-04T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-04T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-04T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T15:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-04T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-04T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-04T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-04T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-04T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-07T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-07T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-07T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-07T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-07T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-07T16:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-07T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-07T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-07T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-07T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-07T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-08T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-08T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-08T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-08T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-08T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-08T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-08T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-09T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-09T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T12:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-09T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-09T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-09T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-09T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-09T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-09T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-10T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-10T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-10T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-10T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-10T14:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-10T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-10T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-10T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-10T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-10T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-10T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-11T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-11T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-11T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-11T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-11T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-11T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-11T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-11T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-14T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-14T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-14T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-14T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T12:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-14T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-14T15:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-14T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-14T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-14T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-14T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-15T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-15T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T13:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-15T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-15T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-15T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-15T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-15T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-15T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-15T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-15T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-16T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-16T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-16T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-16T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-16T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-16T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-16T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-16T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-16T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-16T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-17T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-17T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-17T16:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-17T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-17T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-17T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-17T20:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-17T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-18T07:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-18T08:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-18T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-18T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T17:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-18T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-18T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-09-21T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-21T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T11:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-21T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-21T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-21T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-21T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-21T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-21T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-21T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-22T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-22T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-22T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-22T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-22T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-22T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-22T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-22T18:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-22T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-22T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-23T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-23T08:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-23T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-23T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-23T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-23T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-23T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-23T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T07:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-24T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-24T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-24T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-24T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-24T17:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-24T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-24T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-24T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-25T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-25T08:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-25T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-25T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T14:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T15:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-25T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-25T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-25T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-25T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-25T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-28T07:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T08:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-28T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-28T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-28T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-28T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-28T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-28T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-28T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-28T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-29T08:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-09-29T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-29T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-29T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-09-29T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-29T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-29T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-29T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-09-30T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-09-30T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-30T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T13:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-09-30T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T15:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-30T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-09-30T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-09-30T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-09-30T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-09-30T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-09-30T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-01T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-01T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-01T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-01T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-01T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-01T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-01T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-01T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-01T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-01T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-01T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-01T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-02T07:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-10-02T08:00:00-04:00"
+      },
+      {
+        "docked": 290,
+        "in_transit": 10,
+        "timestamp": "2026-10-02T09:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-02T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-02T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T12:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-02T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-02T14:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-02T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-02T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-02T17:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-02T18:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-02T19:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-02T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-02T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-05T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-05T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-05T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-05T12:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T14:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-05T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-05T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-05T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-05T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-05T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-05T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-06T07:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-06T08:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-06T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-06T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-06T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-06T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-06T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-06T14:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-06T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-06T17:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-06T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T19:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-06T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-06T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-07T07:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-07T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-07T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-07T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-07T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-07T13:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-07T14:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-07T15:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-07T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-07T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-07T18:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-07T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-08T07:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-08T09:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T11:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-08T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T13:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-08T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-08T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-08T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-08T18:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-08T19:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-08T20:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-08T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-09T08:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-09T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-09T10:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-09T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-09T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-09T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T16:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-09T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-09T18:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-09T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-09T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-09T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-12T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T09:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T10:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T11:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-12T12:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-12T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T14:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-12T15:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T16:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-12T17:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-12T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-12T19:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-12T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-12T21:00:00-04:00"
+      },
+      {
+        "docked": 300,
+        "in_transit": 0,
+        "timestamp": "2026-10-13T07:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-13T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-13T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T10:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T11:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T12:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-13T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-13T16:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-13T17:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-13T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-13T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-13T20:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-13T21:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-14T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-14T08:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-14T09:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-14T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T12:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T13:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T14:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-14T15:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-14T16:00:00-04:00"
+      },
+      {
+        "docked": 291,
+        "in_transit": 9,
+        "timestamp": "2026-10-14T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-14T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T19:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-14T20:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-14T21:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-15T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-15T08:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-15T09:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-15T10:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-15T11:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-15T12:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-15T13:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-15T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-15T15:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-15T16:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-15T17:00:00-04:00"
+      },
+      {
+        "docked": 294,
+        "in_transit": 6,
+        "timestamp": "2026-10-15T18:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-15T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-15T20:00:00-04:00"
+      },
+      {
+        "docked": 299,
+        "in_transit": 1,
+        "timestamp": "2026-10-15T21:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T07:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-16T08:00:00-04:00"
+      },
+      {
+        "docked": 292,
+        "in_transit": 8,
+        "timestamp": "2026-10-16T09:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T10:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T11:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-16T12:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T13:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-16T14:00:00-04:00"
+      },
+      {
+        "docked": 297,
+        "in_transit": 3,
+        "timestamp": "2026-10-16T15:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T16:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T17:00:00-04:00"
+      },
+      {
+        "docked": 293,
+        "in_transit": 7,
+        "timestamp": "2026-10-16T18:00:00-04:00"
+      },
+      {
+        "docked": 295,
+        "in_transit": 5,
+        "timestamp": "2026-10-16T19:00:00-04:00"
+      },
+      {
+        "docked": 298,
+        "in_transit": 2,
+        "timestamp": "2026-10-16T20:00:00-04:00"
+      },
+      {
+        "docked": 296,
+        "in_transit": 4,
+        "timestamp": "2026-10-16T21:00:00-04:00"
+      }
+    ]
+  },
   "station_sources": [
     {
       "coordinate_note": "Cornell event location JSON-LD; real building anchor, fictional station nearby.",
@@ -318,142 +6247,255 @@
   "transfer_audit": {
     "disruption": {
       "baseline": {
-        "afternoon_return": {
-          "planned_transfers": 603,
-          "successful_transfers": 593
+        "synthetic_daytime_rider": {
+          "arrivals": 1613,
+          "planned_transfers": 1613,
+          "reroutes": 0,
+          "successful_transfers": 1613
         },
-        "background": {
-          "planned_transfers": 2700,
-          "successful_transfers": 2421
+        "synthetic_daytime_rider_still_riding": {
+          "arrivals": 436,
+          "planned_transfers": 436,
+          "reroutes": 0,
+          "successful_transfers": 436
         },
-        "evening_return": {
-          "planned_transfers": 1112,
-          "successful_transfers": 817
+        "synthetic_evening_return": {
+          "arrivals": 1195,
+          "planned_transfers": 1195,
+          "reroutes": 0,
+          "successful_transfers": 1195
         },
-        "midday_exchange": {
-          "planned_transfers": 781,
-          "successful_transfers": 657
+        "synthetic_evening_return_still_riding": {
+          "arrivals": 702,
+          "planned_transfers": 702,
+          "reroutes": 0,
+          "successful_transfers": 702
         },
-        "morning_to_class": {
-          "planned_transfers": 1405,
-          "successful_transfers": 1300
+        "synthetic_morning_commute": {
+          "arrivals": 1668,
+          "planned_transfers": 1668,
+          "reroutes": 0,
+          "successful_transfers": 1668
+        },
+        "synthetic_morning_commute_still_riding": {
+          "arrivals": 443,
+          "planned_transfers": 443,
+          "reroutes": 0,
+          "successful_transfers": 443
+        },
+        "synthetic_overnight_rider": {
+          "arrivals": 286,
+          "planned_transfers": 286,
+          "reroutes": 0,
+          "successful_transfers": 286
+        },
+        "synthetic_overnight_rider_still_riding": {
+          "arrivals": 144,
+          "planned_transfers": 144,
+          "reroutes": 0,
+          "successful_transfers": 144
+        },
+        "synthetic_weekend_rider": {
+          "arrivals": 560,
+          "planned_transfers": 560,
+          "reroutes": 0,
+          "successful_transfers": 560
+        },
+        "synthetic_weekend_rider_still_riding": {
+          "arrivals": 223,
+          "planned_transfers": 223,
+          "reroutes": 0,
+          "successful_transfers": 223
         }
       },
       "monitoring": {
-        "afternoon_return": {
-          "planned_transfers": 347,
-          "successful_transfers": 347
+        "synthetic_daytime_rider": {
+          "arrivals": 1332,
+          "planned_transfers": 1332,
+          "reroutes": 0,
+          "successful_transfers": 1332
         },
-        "background": {
-          "planned_transfers": 1620,
-          "successful_transfers": 1391
+        "synthetic_daytime_rider_still_riding": {
+          "arrivals": 256,
+          "planned_transfers": 256,
+          "reroutes": 0,
+          "successful_transfers": 256
         },
-        "evening_return": {
-          "planned_transfers": 665,
-          "successful_transfers": 546
+        "synthetic_evening_return": {
+          "arrivals": 2766,
+          "planned_transfers": 2766,
+          "reroutes": 0,
+          "successful_transfers": 2766
         },
-        "midday_exchange": {
-          "planned_transfers": 457,
-          "successful_transfers": 298
+        "synthetic_evening_return_still_riding": {
+          "arrivals": 332,
+          "planned_transfers": 336,
+          "reroutes": 0,
+          "successful_transfers": 336
         },
-        "morning_to_class": {
-          "planned_transfers": 2310,
-          "successful_transfers": 951
-        }
-      }
-    },
-    "edge_cases": {
-      "baseline": {
-        "afternoon_return": {
-          "planned_transfers": 603,
-          "successful_transfers": 594
+        "synthetic_morning_commute": {
+          "arrivals": 1929,
+          "planned_transfers": 1929,
+          "reroutes": 0,
+          "successful_transfers": 1929
         },
-        "background": {
-          "planned_transfers": 2700,
-          "successful_transfers": 2432
+        "synthetic_morning_commute_still_riding": {
+          "arrivals": 219,
+          "planned_transfers": 219,
+          "reroutes": 0,
+          "successful_transfers": 219
         },
-        "evening_return": {
-          "planned_transfers": 1112,
-          "successful_transfers": 820
+        "synthetic_overnight_rider": {
+          "arrivals": 128,
+          "planned_transfers": 128,
+          "reroutes": 0,
+          "successful_transfers": 128
         },
-        "midday_exchange": {
-          "planned_transfers": 781,
-          "successful_transfers": 658
+        "synthetic_overnight_rider_still_riding": {
+          "arrivals": 78,
+          "planned_transfers": 78,
+          "reroutes": 0,
+          "successful_transfers": 78
         },
-        "morning_to_class": {
-          "planned_transfers": 1405,
-          "successful_transfers": 1303
-        }
-      },
-      "monitoring": {
-        "afternoon_return": {
-          "planned_transfers": 360,
-          "successful_transfers": 356
+        "synthetic_weekend_rider": {
+          "arrivals": 234,
+          "planned_transfers": 234,
+          "reroutes": 0,
+          "successful_transfers": 234
         },
-        "background": {
-          "planned_transfers": 1620,
-          "successful_transfers": 1471
-        },
-        "evening_return": {
-          "planned_transfers": 653,
-          "successful_transfers": 524
-        },
-        "midday_exchange": {
-          "planned_transfers": 478,
-          "successful_transfers": 402
-        },
-        "morning_to_class": {
-          "planned_transfers": 862,
-          "successful_transfers": 806
+        "synthetic_weekend_rider_still_riding": {
+          "arrivals": 109,
+          "planned_transfers": 109,
+          "reroutes": 0,
+          "successful_transfers": 109
         }
       }
     },
     "normal": {
       "baseline": {
-        "afternoon_return": {
-          "planned_transfers": 603,
-          "successful_transfers": 593
+        "synthetic_daytime_rider": {
+          "arrivals": 1613,
+          "planned_transfers": 1613,
+          "reroutes": 0,
+          "successful_transfers": 1613
         },
-        "background": {
-          "planned_transfers": 2700,
-          "successful_transfers": 2421
+        "synthetic_daytime_rider_still_riding": {
+          "arrivals": 436,
+          "planned_transfers": 436,
+          "reroutes": 0,
+          "successful_transfers": 436
         },
-        "evening_return": {
-          "planned_transfers": 1112,
-          "successful_transfers": 817
+        "synthetic_evening_return": {
+          "arrivals": 1195,
+          "planned_transfers": 1195,
+          "reroutes": 0,
+          "successful_transfers": 1195
         },
-        "midday_exchange": {
-          "planned_transfers": 781,
-          "successful_transfers": 657
+        "synthetic_evening_return_still_riding": {
+          "arrivals": 702,
+          "planned_transfers": 702,
+          "reroutes": 0,
+          "successful_transfers": 702
         },
-        "morning_to_class": {
-          "planned_transfers": 1405,
-          "successful_transfers": 1300
+        "synthetic_morning_commute": {
+          "arrivals": 1668,
+          "planned_transfers": 1668,
+          "reroutes": 0,
+          "successful_transfers": 1668
+        },
+        "synthetic_morning_commute_still_riding": {
+          "arrivals": 443,
+          "planned_transfers": 443,
+          "reroutes": 0,
+          "successful_transfers": 443
+        },
+        "synthetic_overnight_rider": {
+          "arrivals": 286,
+          "planned_transfers": 286,
+          "reroutes": 0,
+          "successful_transfers": 286
+        },
+        "synthetic_overnight_rider_still_riding": {
+          "arrivals": 144,
+          "planned_transfers": 144,
+          "reroutes": 0,
+          "successful_transfers": 144
+        },
+        "synthetic_weekend_rider": {
+          "arrivals": 560,
+          "planned_transfers": 560,
+          "reroutes": 0,
+          "successful_transfers": 560
+        },
+        "synthetic_weekend_rider_still_riding": {
+          "arrivals": 223,
+          "planned_transfers": 223,
+          "reroutes": 0,
+          "successful_transfers": 223
         }
       },
       "monitoring": {
-        "afternoon_return": {
-          "planned_transfers": 360,
-          "successful_transfers": 355
+        "synthetic_daytime_rider": {
+          "arrivals": 953,
+          "planned_transfers": 953,
+          "reroutes": 0,
+          "successful_transfers": 953
         },
-        "background": {
-          "planned_transfers": 1620,
-          "successful_transfers": 1434
+        "synthetic_daytime_rider_still_riding": {
+          "arrivals": 260,
+          "planned_transfers": 260,
+          "reroutes": 0,
+          "successful_transfers": 260
         },
-        "evening_return": {
-          "planned_transfers": 653,
-          "successful_transfers": 523
+        "synthetic_evening_return": {
+          "arrivals": 748,
+          "planned_transfers": 748,
+          "reroutes": 0,
+          "successful_transfers": 748
         },
-        "midday_exchange": {
-          "planned_transfers": 478,
-          "successful_transfers": 362
+        "synthetic_evening_return_still_riding": {
+          "arrivals": 414,
+          "planned_transfers": 418,
+          "reroutes": 0,
+          "successful_transfers": 418
         },
-        "morning_to_class": {
-          "planned_transfers": 862,
-          "successful_transfers": 800
+        "synthetic_morning_commute": {
+          "arrivals": 944,
+          "planned_transfers": 944,
+          "reroutes": 0,
+          "successful_transfers": 944
+        },
+        "synthetic_morning_commute_still_riding": {
+          "arrivals": 297,
+          "planned_transfers": 297,
+          "reroutes": 0,
+          "successful_transfers": 297
+        },
+        "synthetic_overnight_rider": {
+          "arrivals": 128,
+          "planned_transfers": 128,
+          "reroutes": 0,
+          "successful_transfers": 128
+        },
+        "synthetic_overnight_rider_still_riding": {
+          "arrivals": 78,
+          "planned_transfers": 78,
+          "reroutes": 0,
+          "successful_transfers": 78
+        },
+        "synthetic_weekend_rider": {
+          "arrivals": 234,
+          "planned_transfers": 234,
+          "reroutes": 0,
+          "successful_transfers": 234
+        },
+        "synthetic_weekend_rider_still_riding": {
+          "arrivals": 109,
+          "planned_transfers": 109,
+          "reroutes": 0,
+          "successful_transfers": 109
         }
       }
     }
-  },
-  "transfer_audit_scope": "Synthetic planned/successful movements aggregated by scenario and phase; excludes the initial allocation and artificial edge-fixture adjustments; never customer attempts or observed trips"
+  }
 }

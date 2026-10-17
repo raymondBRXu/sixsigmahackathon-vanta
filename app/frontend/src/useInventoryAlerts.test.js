@@ -66,9 +66,9 @@ describe('continuous inventory alert conditions', () => {
   it('resets dismissals when changing source, even if the new source is still loading', () => {
     const { result, rerender } = renderAlerts()
     act(() => { result.current.dismiss('S01'); result.current.dismiss('S02') })
-    rerender({ ...initial, source: 'edge_cases', data: null })
+    rerender({ ...initial, source: 'disruption', data: null })
     expect(ids(result)).toEqual([])
-    rerender({ ...initial, source: 'edge_cases' })
+    rerender({ ...initial, source: 'disruption' })
     expect(ids(result)).toEqual(['S01', 'S02'])
     act(() => result.current.dismiss('S01'))
     rerender({ ...initial, data: null })

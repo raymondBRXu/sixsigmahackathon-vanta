@@ -1,12 +1,10 @@
 """Known-answer, degeneracy and chronology tests for the plain statistical core."""
 
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
 
-from dockwatch.data import load_bundle, load_observations, load_settings, load_stations, planned_timestamps
+from dockwatch.data import load_observations, load_settings, load_stations, planned_timestamps
 from dockwatch.qc import (
     hourly_changes, individual_limits, realtime_history, snapshot_at, snapshot_metrics,
     station_history, station_hour_history,
@@ -309,9 +307,13 @@ def test_interval_and_timestamp_input_validation(interval_data):
         individual_limits([10, 12], [pd.Timestamp(end), pd.Timestamp(start)])
 
 
-def test_real_edge_cases_show_same_occupancy_and_different_availability():
-    directory = Path(__file__).resolve().parents[1] / "data"
-    observations, stations, settings = load_bundle(directory, directory / "edge_cases.csv")
+def test_balanced_and_polarized_fixture_has_same_occupancy_but_different_availability():
+    stations = make_stations(20)
+    observations = observations_for([
+        (f"2026-09-28T{hour:02}:00:00-04:00", station_id, bikes)
+        for hour, counts in ((9, [15] * 20), (10, [0] * 10 + [30] * 10))
+        for station_id, bikes in zip(stations["station_id"], counts)
+    ])
     balanced = snapshot_metrics(snapshot_at(observations, stations, "2026-09-28T09:00:00-04:00"))
     polarized = snapshot_metrics(snapshot_at(observations, stations, "2026-09-28T10:00:00-04:00"))
     assert balanced["mean_occupancy"] == polarized["mean_occupancy"] == 0.5

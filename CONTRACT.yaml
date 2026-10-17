@@ -25,6 +25,26 @@ spec: SPEC.md
 updated: "2026-10-17"
 
 tasks:
+  - id: H-13
+    title: Integrate the updated data branch with the React dashboard
+    points: "Working datasets, reproducibility and validated dashboard behavior"
+    status: done
+    owner: "Codex with disjoint backend, frontend and documentation subtasks"
+    started_at: "2026-10-17"
+    owns: ["data/", "app/", "tests/", "scripts/", "README.md", "SPEC.md", "docs/", "demo/", "CONTRACT.yaml", ".gitignore"]
+    notes: >
+      User explicitly authorized a local snapshot followed by integration of
+      origin/chi/data into ray/dashboard-react, with no push. The snapshot is
+      33ae75d. Adopt the two v5 scenarios and positive-duration ride model;
+      preserve current History calculations and all eight diagnosis rules.
+      Update fleet validation, scenario choices, packaging and dataset-specific
+      checks without altering the published CSV/event data.
+    definition_of_done: >
+      Python application and generator tests, frontend tests and build pass;
+      both scenarios load through the API and browser, local bundle preparation
+      succeeds, git diff --check passes, and the merge is committed locally only.
+    result: "Integrated origin/chi/data at 1b0aa7f after snapshot 33ae75d, with local-only merge authorized. 216 application tests, 24 generator tests and 89 frontend tests pass; production build, 17 bundle checksums, isolated bundle API checks and browser checks for both scenarios, alerts, eight-point updates and full-range diagnosis pass. Published data artifacts are unchanged; current eight-rule calculations are preserved."
+
   - id: H-12
     title: Link inventory alerts and place playback controls in the sidebar
     points: "Dashboard usability and clear current inventory actions"

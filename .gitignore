@@ -21,3 +21,6 @@ rsconnect/
 build/
 .coverage
 htmlcov/
+
+# Generator archives from locally replacing demonstration datasets.
+.dockwatch-data-backups/

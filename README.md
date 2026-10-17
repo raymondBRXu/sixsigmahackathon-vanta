@@ -2,7 +2,7 @@
 
 A React dashboard and Python API for a synthetic Ithaca bikeshare network. Inspect current inventory, find empty/full stations, review manual inventory actions, and explore hourly history with Individuals charts.
 
-**20 fictional stations · 300 bikes · hourly snapshots · three synthetic scenarios.** No live telemetry or automated dispatch. The React version preserves the final approved dashboard's content and statistical calculations.
+**20 fictional stations · 300 bikes docked or in transit · hourly snapshots · two synthetic scenarios.** No live telemetry or automated dispatch. The React dashboard retains its same-hour Individuals calculations and optional eight-rule diagnosis.
 
 ## Run locally
 
@@ -37,6 +37,11 @@ Vite proxies `/api` and `/health` to port 8000. Production uses relative URLs, s
 5. Click **History** on a station card to pause playback and open that station's Individuals chart in a dialog. Each opening starts at **07:00** and the full configured service-date range, independently of the shared clock and sidebar station. Choose an **Operating hour** and an inclusive **date range** using the two handles or date selectors. The chart plots one count per service date at that hour, with observed/CL/LCL/UCL cards for the selected series. Close the dialog or press **Escape** to return to the same grid or enlarged chart, with playback paused and focus returned to its **History** button.
 6. Upload your own observations from the sidebar or download the current snapshot from **Overview**.
 
+The built-in sources are **Normal operations** and **Disruption**. Normal has
+no operational threshold warnings in its published snapshots. Disruption includes
+empty/full, low/high and exact-boundary examples. Both use positive-duration
+rides and continuous overnight inventory; there is no daily stock reset.
+
 Click a station chart's body, or focus the chart and press **Enter** or **Space**, to show that station in a larger chart. The shared clock continues to update its eight-slot window with the same 15/24/6 reference lines. Choose **Back to all stations** or press **Escape** to restore the 20-card grid. The separate **History** button opens the historical chart without changing the grid or enlarged view underneath.
 
 In History, hover or focus any observed point to inspect its date, count and
@@ -55,6 +60,16 @@ that cannot be evaluated are identified separately from rules with no matches.
 
 CSV columns are `timestamp`, `station_id`, `bikes`. Timestamps must include a UTC offset and fall on the configured hourly calendar. IDs must match `data/stations.json`; bike counts must be integers between zero and station capacity. Duplicate station/timestamp keys and invalid rows are rejected with row-level messages. Missing observations are absent rows, never inferred zeros. Uploads use the supplied station metadata and calendar, with no synthetic 300-bike-total requirement.
 
+`bikes` counts docked inventory. In the synthetic event model, docked plus
+in-transit bikes totals 300; docked counts alone can total less than 300. The
+dashboard does not require event logs or infer trip counts from partial uploads.
+The v5 generation reports use a preserved three-rule detector with frozen
+reference limits. Current History uses its selected range, or the full range
+for eight-rule Diagnosis. Consequently, its matches can differ from those
+reports: **normal S01 at 07:00 has a T3 match with Diagnosis enabled**. This is
+an exploratory pattern, not an operational stock warning. See the
+[integrated data codebook](data/README.md) and [current demo](demo/README.md).
+
 Uploads are temporary, limited to 5 MiB, and stored only in the Python process's memory (at most eight uploaded sources). Restarting the server or evicting an old upload requires uploading it again. Use one worker for this demonstration. Reloading the dashboard starts the default demo.
 
 | Measure | Definition |
@@ -66,7 +81,8 @@ Uploads are temporary, limited to 5 MiB, and stored only in the Python process's
 | Suggested move | Half-capacity target minus current bikes for an actionable station |
 | Hourly net change | Difference between consecutive one-hour readings in the same local service day |
 | Individuals CL | Mean of valid counts for the selected station/hour and date range |
-| MR and sigma estimate | Mean absolute difference at the selected hour between consecutive scheduled service dates, divided by `d2 = 1.128` |
+| Mean moving range (MR̄) | Mean absolute difference at the selected hour between consecutive scheduled service dates |
+| Sigma estimate | MR̄ divided by `d2 = 1.128` |
 | Estimated LCL/UCL | CL minus/plus three estimated sigma |
 
 The Individuals chart preserves missing scheduled readings as gaps in its lines and moving ranges. Non-service dates, such as weekends in the supplied calendar, are not missing readings. Limits are not clipped to physical capacity. Constant data, a single reading or no adjacent valid pair retain the observed values and mean but have no estimated UCL/LCL. Limits are exploratory: bounded inventory and serial dependence can affect their interpretation. These charts do not establish stability, trigger alarms, measure failed customer attempts, give exact outage durations, or prove intervention effects.
@@ -109,6 +125,11 @@ print(snapshot_metrics(state))
 
 `load_bundle(data_dir, source=None, check_fleet=False)` returns validated observations, stations and settings; the default CSV is `normal.csv`. Data files are explicit inputs, not bundled into the wheel. `snapshot_at` returns every configured station with exact-current counts and separately labeled last readings. `snapshot_metrics` returns the rates, counts and coverage above. `hourly_changes` adds `net_change` without bridging gaps.
 
+With `check_fleet=True`, observed docked totals at each timestamp must not exceed
+300. This does not require docked totals to equal the fleet size or establish
+physical conservation; the generator's independent event replay checks docked
+plus in-transit accounting.
+
 ## HTTP API
 
 All endpoints are documented in `/api/docs`. Index parameters refer to the ordered `timestamps` array returned by `/api/config` (0 through 599 for the supplied calendar).
@@ -136,7 +157,7 @@ windows, contributing indices and one issue entry per detected rule. The
 interactive client renders these results without reimplementing statistics;
 the legacy SVG endpoint remains available for static charts.
 
-Built-in source IDs are `normal`, `disruption`, `edge_cases`. Use the returned source ID for uploaded observations. Invalid selections return HTTP 422; unknown/expired sources return 404. Missing values serialize to JSON `null`.
+Built-in source IDs are `normal` and `disruption`. Use the returned source ID for uploaded observations. Invalid selections return HTTP 422; unknown/expired sources return 404. Missing values serialize to JSON `null`.
 
 ## Verify
 

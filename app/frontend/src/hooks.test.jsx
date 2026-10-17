@@ -36,7 +36,7 @@ describe('API request lifecycle', () => {
     const { result, rerender } = renderHook(({ source }) => useResource('snapshot', { source, cursor: 1 }), { initialProps: { source: 'normal' } })
     await act(async () => {})
     expect(result.current.data.source).toBe('normal')
-    rerender({ source: 'edge_cases' })
+    rerender({ source: 'disruption' })
     expect(result.current.data).toBeNull()
   })
 })

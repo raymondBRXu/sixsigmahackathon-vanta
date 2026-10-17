@@ -33,19 +33,26 @@ def test_configuration_and_health_match_existing_demo(client):
     assert len(config["stations"]) == 20
     assert config["source"] == {"id": "normal", "label": "normal.csv", "observations": 12000}
     assert config["stations"][0]["display_name"] == "Robert Purcell Community Center"
-    assert [scenario["id"] for scenario in config["scenarios"]] == ["normal", "disruption", "edge_cases"]
+    assert [scenario["id"] for scenario in config["scenarios"]] == ["normal", "disruption"]
+    assert config["scenarios"][1]["label"] == "Disruption"
     assert client.get("/api/docs").status_code == 200
     assert "/api/analysis" in client.get("/api/openapi.json").json()["paths"]
 
 
-@pytest.mark.parametrize("source", ["normal", "disruption", "edge_cases"])
+def test_removed_edge_case_demo_is_rejected_as_an_unknown_source(client):
+    response = client.get("/api/config", params={"source": "edge_cases"})
+    assert response.status_code == 404
+    assert "Unknown or expired source" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("source", ["normal", "disruption"])
 def test_snapshot_matches_core_and_preserves_queue_names(client, source):
     response = client.get("/api/snapshot", params={"source": source, "cursor": 377})
     assert response.status_code == 200
     result = response.json()
     direct = api.snapshot_at(api._builtin(source), api.STATIONS, api.PLAN[377])
     assert result["metrics"] == api.snapshot_metrics(direct)
-    assert sum(row["bikes"] for row in result["stations"]) == 300
+    assert sum(row["bikes"] for row in result["stations"]) <= 300
     assert all(row["display_name"] and "net_change" in row for row in result["stations"])
     assert [(row["priority"], row["station_id"]) for row in result["queue"]] == sorted(
         (row["priority"], row["station_id"]) for row in result["queue"]
@@ -286,10 +293,10 @@ def test_same_hour_defaults_and_demo_checkpoint(client):
     assert result["start_date"] == "2026-08-24" and result["end_date"] == "2026-09-28"
     assert result["summary"]["planned"] == 26
     result = client.get("/api/analysis", params={"cursor": 377, "hour": 9, "start_date": "2026-09-22"}).json()
-    assert [row["bikes"] for row in result["history"]] == [17, 23, 19, 15, 17]
+    assert [row["bikes"] for row in result["history"]] == [11, 12, 8, 11, 9]
     assert result["summary"]["limits"] == pytest.approx({
-        "cl": 18.2, "mr_mean": 4, "sigma": 3.546099290780142,
-        "lcl": 7.561702127659572, "ucl": 28.838297872340426, "n": 5, "pairs": 4,
+        "cl": 10.2, "mr_mean": 2.5, "sigma": 2.2163120567375887,
+        "lcl": 3.5510638297872337, "ucl": 16.848936170212767, "n": 5, "pairs": 4,
     })
 
 

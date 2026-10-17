@@ -85,7 +85,8 @@ def load_observations(source, stations, settings, check_fleet=False):
     """Validate all CSV rows or raise one readable error with CSV row numbers.
 
     Missing rows remain absent. Explicit blank counts are invalid measurements.
-    The optional fleet check applies only to complete synthetic snapshots.
+    The optional synthetic fleet check bounds observed docked totals at 300.
+    Bikes may be in transit, so docked totals alone do not prove conservation.
     """
     if isinstance(source, pd.DataFrame):
         observations = source.copy().reset_index(drop=True)
@@ -135,10 +136,13 @@ def load_observations(source, stations, settings, check_fleet=False):
     observations["service_date"] = observations["timestamp"].dt.strftime("%Y-%m-%d")
     observations["hour"] = observations["timestamp"].dt.hour
     if check_fleet:
-        totals = observations.groupby("timestamp")["bikes"].agg(["count", "sum"])
-        incorrect = totals[totals["count"].eq(len(stations)) & totals["sum"].ne(300)]
+        totals = observations.groupby("timestamp")["bikes"].sum()
+        incorrect = totals[totals.gt(300)]
         if not incorrect.empty:
-            raise ValueError(f"Complete synthetic snapshot must total 300 bikes: {incorrect.index[0]}.")
+            raise ValueError(
+                f"Observed docked total exceeds the 300-bike synthetic fleet: {incorrect.index[0]}. "
+                "Docked counts alone do not establish full fleet conservation."
+            )
     return observations
 
 

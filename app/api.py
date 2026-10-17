@@ -36,8 +36,7 @@ APP_DIR = Path(__file__).resolve().parent
 DATA_DIR = APP_DIR / "data" if (APP_DIR / "data").is_dir() else APP_DIR.parent / "data"
 SCENARIOS = [
     {"id": "normal", "label": "Normal operations", "filename": "normal.csv"},
-    {"id": "disruption", "label": "Morning disruption", "filename": "disruption.csv"},
-    {"id": "edge_cases", "label": "Edge cases", "filename": "edge_cases.csv"},
+    {"id": "disruption", "label": "Disruption", "filename": "disruption.csv"},
 ]
 SCENARIO_BY_ID = {scenario["id"]: scenario for scenario in SCENARIOS}
 STATIONS = load_stations(DATA_DIR / "stations.json")
@@ -78,7 +77,7 @@ def _records(frame):
     return [{key: scalar(value) for key, value in row.items()} for row in frame.to_dict("records")]
 
 
-@lru_cache(maxsize=3)
+@lru_cache(maxsize=len(SCENARIOS))
 def _builtin(source):
     observations = load_observations(
         DATA_DIR / SCENARIO_BY_ID[source]["filename"], STATIONS, SETTINGS, check_fleet=True

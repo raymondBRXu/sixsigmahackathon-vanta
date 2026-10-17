@@ -6,4 +6,4 @@ The frontend lives in `frontend/`, the HTTP adapter in `api.py`, and reusable da
 
 `./app/manifestme` builds and verifies a self-contained `build/connect` bundle with entrypoint `api:app`. `./app/deployme` publishes that bundle only when explicitly invoked with `CONNECT_SERVER` and `CONNECT_API_KEY` in the environment. Python 3.12 is required on the target server.
 
-See the root [README](../README.md) for installation, library and HTTP contracts, assumptions, tests and deployment details. See [demo checkpoints](../demo/README.md) to reproduce the normal, disruption and edge-case views.
+See the root [README](../README.md) for installation, library and HTTP contracts, assumptions, tests and deployment details. See [demo checkpoints](../demo/README.md) to reproduce the two v5 sources, Normal operations and Disruption, including current eight-rule History results. The [data codebook](../data/README.md) distinguishes current results from the preserved generation-time three-rule reports.

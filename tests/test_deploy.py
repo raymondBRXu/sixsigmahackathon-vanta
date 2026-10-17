@@ -18,6 +18,7 @@ def deployment(tmp_path, monkeypatch):
         "app/api.py": "app = object()\n",
         "app/dockwatch/__init__.py": "from .qc import individual_limits\n",
         "app/dockwatch/qc.py": "def individual_limits(values): return values\n",
+        "app/dockwatch/patterns.py": "def detect_special_causes(values, centerline, sigma): return {}\n",
         "app/dockwatch/__pycache__/qc.cpython-312.pyc": "ignored cache",
         "app/dockwatch/old.pyc": "ignored bytecode",
         "app/frontend/dist/index.html": '<script src="./assets/app.js"></script>',
@@ -27,10 +28,12 @@ def deployment(tmp_path, monkeypatch):
         "app/streamlit_app.py": "unrelated old entrypoint, excluded",
         "data/normal.csv": "timestamp,station_id,bikes\n",
         "data/disruption.csv": "timestamp,station_id,bikes\n",
-        "data/edge_cases.csv": "timestamp,station_id,bikes\n",
         "data/stations.json": "[]\n",
         "data/settings.json": "{}\n",
         "data/generate_data.py": "data generation code, excluded",
+        "data/_qc_snapshot.py": "generation-only legacy diagnostic snapshot, excluded",
+        "data/normal_events.jsonl": "generation-only event log, excluded",
+        "data/disruption_events.jsonl": "generation-only event log, excluded",
         "tests/test_qc.py": "development tests, excluded",
         ".python-version": "3.12.3\n",
         ".env": "unrelated local settings, excluded",
@@ -74,9 +77,9 @@ def test_bundle_contains_only_runtime_inputs_and_replaces_stale_output(deploymen
     (bundle / "stale.txt").write_text("old generated content")
     prepare_deploy.prepare()
     assert {path.relative_to(bundle).as_posix() for path in bundle.rglob("*") if path.is_file()} == {
-        "api.py", "dockwatch/__init__.py", "dockwatch/qc.py",
+        "api.py", "dockwatch/__init__.py", "dockwatch/qc.py", "dockwatch/patterns.py",
         "frontend/dist/index.html", "frontend/dist/assets/app.js",
-        "data/normal.csv", "data/disruption.csv", "data/edge_cases.csv",
+        "data/normal.csv", "data/disruption.csv",
         "data/stations.json", "data/settings.json", ".python-version", "requirements.txt",
     }
     assert (bundle / "api.py").read_bytes() == (root / "app" / "api.py").read_bytes()

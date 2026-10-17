@@ -1,5 +1,10 @@
 # React migration implementation plan
 
+This file records successive implementation snapshots. Earlier dataset counts,
+scenario names and UI descriptions are historical; H-13 below supersedes them
+for the v5 integration. Current instructions and values are in README.md,
+docs/MVP.md and demo/README.md.
+
 Task H-09 in CONTRACT.yaml records this user-authorized migration on ray/dashboard-react.
 
 1. Recover the final approved behavior from the archived Streamlit implementation without restoring its runtime or popping the stash.
@@ -299,3 +304,57 @@ duplicate playback controls. History retains its own date range and pause behavi
 - At 1024px the sidebar buttons fit its narrower width. At 390px and 320px,
   the page and clock have no horizontal overflow. Browser error log is empty;
   viewport override is reset and the temporary verification tab is closed.
+
+## H-13 — integrate the published v5 data pair
+
+The user authorized a local snapshot (`33ae75d`) followed by merging
+`origin/chi/data` (`1b0aa7f`) into `ray/dashboard-react`, with no push. The data
+README conflict is resolved with an integration codebook. Published CSVs, event
+ledgers, generation metadata, validation reports, README.v5.md and the frozen
+detector snapshot retain their incoming bytes.
+
+The built-in sources are now Normal operations and Disruption. Docked inventory
+plus riders in transit totals 300; docked CSV totals alone can be lower. Positive
+ride times and overnight event continuity replace instantaneous transfers and
+held overnight counts. Built-in fleet validation rejects observed docked totals
+above 300 without requiring equality. Event replay verifies physical conservation.
+The removed edge_cases source is replaced by Disruption's boundary examples and
+independent software fixtures for degenerate/invalid inputs.
+
+Current History and all eight rules remain unchanged: same station/hour across
+dates, selected-range estimates, Diagnosis off by default, full-date locking
+while on, no manual approval or frozen monitoring reference. The incoming
+generation reports used a different three-rule frozen-reference detector; they
+are scoped as historical acceptance evidence, not current UI output guarantees.
+For example, normal S01 at 07:00 now has a T3 match under current Diagnosis.
+
+Current-function checkpoints independently read from the published CSVs:
+
+- Normal Sep 28 09:00: 100% two-way availability, no empty/full stations,
+  100% coverage, S01=9 with 21 free docks and hourly change −4. Docked total=291.
+- Normal S01 09:00 on Sep 22/23/24/25/28: `[11,12,8,11,9]`, CL=10.2,
+  MR mean=2.5, sigma=2.2163120567, LCL=3.5510638298, UCL=16.8489361702.
+- Normal full-date S01 07:00: T3 has four unique contributing points in one
+  window, with CL=17.55 and estimated limits 11.412520/23.687480.
+- Disruption Sep 28 09:00: 90% availability, empty S01=0, full S06=30,
+  100% coverage and docked total=296. The 10:00 reading has S01=10/S06=20.
+- Disruption full-date S01 09:00: T1/T2/T4 tabs; T1 and T2 each have two
+  contributing points and two windows; T4 has ten points in three windows.
+- Disruption S14 12:00: T4 has eight points in one window; S17 14:00:
+  T5 has six points in one window, both using current full-date estimates.
+
+Integration verification on 2026-10-17:
+
+- Python application suite: 216 passed. Independent generator suite: 24 passed.
+- Frontend: 89 passed; production build succeeded.
+- Self-contained deployment bundle: both sources load through its API and all
+  17 recorded checksums pass.
+- Browser: both default snapshots match the figures above. S01/S06 critical
+  alerts open live charts; the next step gives S01=10 and eight displayed points,
+  with alert recovery. History shows all 40 dates, S01 09:00 T1/T2/T4, T4's
+  ten red points/three windows, range locking/unlocking and point tooltips.
+  No browser errors were reported.
+
+The walkthrough and MVP are synchronized to the new sources and current UI.
+The merge is to be committed locally after final review; remote push and
+publication remain outside this authorized integration.

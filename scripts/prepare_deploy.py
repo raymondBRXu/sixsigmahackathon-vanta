@@ -21,7 +21,7 @@ def prepare():
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     shutil.copytree(web, BUNDLE / "frontend" / "dist")
     (BUNDLE / "data").mkdir()
-    for name in ("normal.csv", "disruption.csv", "edge_cases.csv", "stations.json", "settings.json"):
+    for name in ("normal.csv", "disruption.csv", "stations.json", "settings.json"):
         shutil.copy2(ROOT / "data" / name, BUNDLE / "data" / name)
     shutil.copy2(ROOT / ".python-version", BUNDLE / ".python-version")
     subprocess.run([

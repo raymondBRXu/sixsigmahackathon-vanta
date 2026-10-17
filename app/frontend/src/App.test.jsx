@@ -32,7 +32,7 @@ const stations = [
   { station_id: 'S01', display_name: 'Robert Purcell Community Center', capacity: 30 },
   { station_id: 'S02', display_name: 'Appel Commons', capacity: 30 },
 ]
-const scenarios = [{ id: 'normal', label: 'Normal operations' }, { id: 'edge_cases', label: 'Edge cases' }]
+const scenarios = [{ id: 'normal', label: 'Normal operations' }, { id: 'disruption', label: 'Disruption' }]
 
 function mockApi({ missing = false, uploadError = false, configOverrides = {}, summary, diagnosisResult, snapshotRows } = {}) {
   const config = (source) => ({ source: { id: source, label: `${source}.csv`, observations: 10 }, timestamps,
@@ -241,7 +241,11 @@ describe('dashboard end-to-end component wiring', () => {
     }))
     const fetch = mockApi({ configOverrides: { ...multiDayConfig, stations: allStations } })
     render(<App />)
+    expect([...screen.getByLabelText('Demo scenario').options].map((option) => [option.value, option.textContent])).toEqual([
+      ['normal', 'Normal operations'], ['disruption', 'Disruption'],
+    ])
     await screen.findByText('18 / 30')
+    expect([...screen.getByLabelText('Demo scenario').options].map((option) => option.value)).toEqual(['normal', 'disruption'])
     expect(lastRealtimeParams(fetch)).toEqual({})
     expect(screen.queryByRole('button', { name: 'Operations' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Analysis' })).toBeNull()
@@ -257,8 +261,8 @@ describe('dashboard end-to-end component wiring', () => {
     await waitFor(() => expect(lastRealtimeParams(fetch).cursor).toBe('8'))
     fireEvent.change(screen.getByRole('slider', { name: 'Simulation time' }), { target: { value: '0' } })
     await waitFor(() => expect(lastRealtimeParams(fetch).cursor).toBe('0'))
-    fireEvent.change(screen.getByLabelText('Demo scenario'), { target: { value: 'edge_cases' } })
-    await waitFor(() => expect(lastRealtimeParams(fetch)).toEqual({ source: 'edge_cases', cursor: '7' }))
+    fireEvent.change(screen.getByLabelText('Demo scenario'), { target: { value: 'disruption' } })
+    await waitFor(() => expect(lastRealtimeParams(fetch)).toEqual({ source: 'disruption', cursor: '7' }))
     fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
     expect(screen.getByLabelText('Station map')).toBeTruthy()
     expect(screen.getByRole('slider', { name: 'Simulation time' }).value).toBe('7')
@@ -393,11 +397,11 @@ describe('dashboard end-to-end component wiring', () => {
     fireEvent.change(within(dialog).getByLabelText('Operating hour'), { target: { value: '11' } })
     await waitFor(() => expect(lastAnalysisParams(fetch)).toMatchObject({ station_id: 'S02', hour: '11', start_date: '2026-09-30' }))
     // A source replacement can also be requested outside the modal's DOM lifecycle.
-    fireEvent.change(screen.getByLabelText('Demo scenario'), { target: { value: 'edge_cases' } })
-    await waitFor(() => expect(lastRealtimeParams(fetch)).toEqual({ source: 'edge_cases', cursor: '7' }))
+    fireEvent.change(screen.getByLabelText('Demo scenario'), { target: { value: 'disruption' } })
+    await waitFor(() => expect(lastRealtimeParams(fetch)).toEqual({ source: 'disruption', cursor: '7' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: /^History for S02 ·/ }))
-    await waitFor(() => expect(lastAnalysisParams(fetch)).toEqual({ source: 'edge_cases', cursor: '14', station_id: 'S02', hour: '7', start_date: '2026-09-28', end_date: '2026-09-30' }))
+    await waitFor(() => expect(lastAnalysisParams(fetch)).toEqual({ source: 'disruption', cursor: '14', station_id: 'S02', hour: '7', start_date: '2026-09-28', end_date: '2026-09-30' }))
     expect(screen.getByRole('slider', { name: 'Analysis start date' }).value).toBe('0')
     expect(screen.getByRole('slider', { name: 'Analysis end date' }).value).toBe('2')
     expect(screen.getByLabelText('Station').value).toBe('S01')

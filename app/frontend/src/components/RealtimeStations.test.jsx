@@ -209,7 +209,7 @@ describe('realtime station charts', () => {
     const { rerender } = render(<RealtimeStations state={{ ...state, cursor: 7 }} />)
     const card = screen.getAllByRole('article')[0]
     await waitFor(() => expect(card.querySelectorAll('.realtime-point')).toHaveLength(8))
-    rerender(<RealtimeStations state={{ ...state, source: 'edge_cases', cursor: 7 }} />)
+    rerender(<RealtimeStations state={{ ...state, source: 'disruption', cursor: 7 }} />)
     expect(card.querySelectorAll('.realtime-point')).toHaveLength(0)
     expect(screen.getAllByRole('article')).toHaveLength(20)
     expect(screen.getByRole('status').textContent).toBe('Updating station readings…')
@@ -231,7 +231,7 @@ describe('realtime station charts', () => {
     const fetch = vi.fn().mockReturnValueOnce(oldRequest.promise).mockReturnValueOnce(newRequest.promise)
     vi.stubGlobal('fetch', fetch)
     const { rerender } = render(<RealtimeStations state={state} />)
-    rerender(<RealtimeStations state={{ ...state, source: 'edge_cases' }} />)
+    rerender(<RealtimeStations state={{ ...state, source: 'disruption' }} />)
     expect(fetch.mock.calls[0][1].signal.aborted).toBe(true)
     const card = screen.getAllByRole('article')[0]
     await act(async () => { newRequest.resolve(response(payload(0, { S01: [30] }))) })

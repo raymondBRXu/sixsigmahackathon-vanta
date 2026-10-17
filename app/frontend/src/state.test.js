@@ -19,7 +19,7 @@ describe('dashboard navigation and playback', () => {
       cursor: previous.cursor, playing: true, historyStation: null, diagnosis: false })
     expect(dashboardReducer(state, { type: 'openRealtimeStation', station: 'S99' })).toBe(state)
     for (const action of [{ type: 'selectOperationsView', view: 'Overview' },
-      { type: 'sourceRequested', source: 'edge_cases' }, { type: 'sourceLoaded', config }]) {
+      { type: 'sourceRequested', source: 'disruption' }, { type: 'sourceLoaded', config }]) {
       expect(dashboardReducer(state, action).realtimeStation).toBeNull()
     }
   })
@@ -40,7 +40,7 @@ describe('dashboard navigation and playback', () => {
     const state = { ...ready(), historyStation: 'S01', diagnosis: true }
     for (const action of [
       { type: 'closeHistory' }, { type: 'openHistory', station: 'S20' },
-      { type: 'sourceRequested', source: 'edge_cases' }, { type: 'sourceLoaded', config },
+      { type: 'sourceRequested', source: 'disruption' }, { type: 'sourceLoaded', config },
       { type: 'selectOperationsView', view: 'Overview' },
     ]) expect(dashboardReducer(state, action).diagnosis).toBe(false)
     expect(dashboardReducer(ready(), { type: 'toggleDiagnosis' }).diagnosis).toBe(false)
@@ -79,7 +79,7 @@ describe('dashboard navigation and playback', () => {
   it('closes History when navigating or replacing its source', () => {
     const state = { ...ready(), historyStation: 'S20', playing: false }
     expect(dashboardReducer(state, { type: 'selectOperationsView', view: 'Overview' })).toMatchObject({ historyStation: null, operationsView: 'Overview', playing: false })
-    expect(dashboardReducer(state, { type: 'sourceRequested', source: 'edge_cases' })).toMatchObject({ historyStation: null, source: 'edge_cases', loading: true })
+    expect(dashboardReducer(state, { type: 'sourceRequested', source: 'disruption' })).toMatchObject({ historyStation: null, source: 'disruption', loading: true })
     expect(dashboardReducer(state, { type: 'sourceLoaded', config })).toMatchObject({ historyStation: null, loading: false })
   })
   it('preserves a narrowed history range when playback rewinds before the selection', () => {
@@ -114,8 +114,8 @@ describe('dashboard navigation and playback', () => {
   })
   it('resets clock and dates for a new source while preserving its valid sidebar station and hour', () => {
     const state = { ...ready(), cursor: 510, dateRange: [27, 33], hour: 17, station: 'S20', playing: true, historyStation: 'S01' }
-    const changed = dashboardReducer(state, { type: 'sourceLoaded', config: { ...config, source: { id: 'edge_cases' } } })
-    expect(changed).toMatchObject({ source: 'edge_cases', cursor: 377, dateRange: [0, 39], hour: 17, playing: false, station: 'S20', historyStation: null })
+    const changed = dashboardReducer(state, { type: 'sourceLoaded', config: { ...config, source: { id: 'disruption' } } })
+    expect(changed).toMatchObject({ source: 'disruption', cursor: 377, dateRange: [0, 39], hour: 17, playing: false, station: 'S20', historyStation: null })
   })
   it('selects the first configured hour if the previous source hour is unavailable', () => {
     const changed = dashboardReducer(ready(), { type: 'sourceLoaded', config: { ...config, hours: [9, 10, 11] } })

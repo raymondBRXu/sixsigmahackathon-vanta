@@ -46,7 +46,7 @@ export default function App() {
     return () => clearInterval(timer)
   }, [state.playing])
 
-  const scenarios = config?.scenarios || [{ id: 'normal', label: 'Normal operations' }, { id: 'disruption', label: 'Morning disruption' }, { id: 'edge_cases', label: 'Edge cases' }]
+  const scenarios = config?.scenarios || [{ id: 'normal', label: 'Normal operations' }, { id: 'disruption', label: 'Disruption' }]
   const customSource = !scenarios.some((item) => item.id === state.source)
   return <div className="app-shell">
     <a className="skip-link" href="#main-content">Skip to dashboard</a>

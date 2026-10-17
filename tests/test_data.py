@@ -97,23 +97,45 @@ def test_collection_plan_is_independent_and_consistent(config):
         load_settings({**settings, "timezone": "Not/A_Zone"}, stations)
 
 
-def test_fleet_check_only_uses_complete_snapshots(config):
+def test_fleet_bound_allows_docked_counts_below_total_without_filling_missing_rows(config):
     stations, settings = config
     rows = pd.DataFrame({"timestamp": ["2026-09-25T07:00:00-04:00"] * 2,
                          "station_id": ["A", "B"], "bikes": [15, 15]})
-    with pytest.raises(ValueError, match="300 bikes"):
-        load_observations(rows, stations, settings, check_fleet=True)
+    assert load_observations(rows, stations, settings, check_fleet=True)["bikes"].tolist() == [15, 15]
     assert len(load_observations(rows.iloc[:1], stations, settings, check_fleet=True)) == 1
+    assert load_observations(rows.iloc[:0], stations, settings, check_fleet=True).empty
 
 
-@pytest.mark.parametrize("filename", ["normal.csv", "disruption.csv", "edge_cases.csv"])
+def test_fleet_bound_accepts_300_and_rejects_excess_without_replacing_capacity_checks(config):
+    template, settings = config
+    stations = load_stations([{**template.iloc[0].to_dict(), "station_id": f"S{index:02}"}
+                              for index in range(1, 21)])
+    settings = load_settings({**settings, "station_ids": stations["station_id"].tolist()}, stations)
+    rows = pd.DataFrame({"timestamp": ["2026-09-25T07:00:00-04:00"] * 20,
+                         "station_id": stations["station_id"], "bikes": [15] * 20})
+    assert load_observations(rows, stations, settings, check_fleet=True)["bikes"].sum() == 300
+    rows.loc[0, "bikes"] = 16
+    with pytest.raises(ValueError, match="docked total exceeds the 300-bike synthetic fleet"):
+        load_observations(rows, stations, settings, check_fleet=True)
+    assert load_observations(rows, stations, settings)["bikes"].sum() == 301
+    rows.loc[0, "bikes"] = 31
+    with pytest.raises(ValueError, match="outside station capacity"):
+        load_observations(rows, stations, settings, check_fleet=True)
+    partial = rows.iloc[:19].assign(bikes=16)
+    with pytest.raises(ValueError, match="docked total exceeds"):
+        load_observations(partial, stations, settings, check_fleet=True)
+
+
+@pytest.mark.parametrize("filename", ["normal.csv", "disruption.csv"])
 def test_supplied_scenarios_validate(filename):
     directory = Path(__file__).resolve().parents[1] / "data"
     observations, stations, settings = load_bundle(directory, directory / filename, check_fleet=True)
     assert len(observations) == 12000
     assert len(stations) == 20
     assert len(planned_timestamps(settings)) == 600
-    assert observations.groupby("timestamp")["bikes"].sum().eq(300).all()
+    docked_totals = observations.groupby("timestamp")["bikes"].sum()
+    assert docked_totals.le(300).all()
+    assert docked_totals.lt(300).any()
 
 
 def test_collection_plan_requires_only_service_calendar_and_preserves_generator_metadata(config):
