@@ -1,5 +1,15 @@
 # DockWatch · Team Vanta
 
+**[Open the public dashboard — no sign-in required](https://connect.systems-apps.com/content/ca01a272-5237-45e0-ac0c-4f3453f50c4c/)**
+
+Use the hosted dashboard directly, or follow the local setup below.
+[Public API documentation](https://connect.systems-apps.com/content/ca01a272-5237-45e0-ac0c-4f3453f50c4c/api/docs)
+is also available. Anonymous page and API access were checked on October 17, 2026.
+
+**[Complete Documentation](docs/DOCUMENTATION.md)** — project README, dashboard
+instructions, input/parameter reference, statistical methods, full data codebook,
+API/library functions and reproducible demonstrations in one document.
+
 A React dashboard and Python API for a synthetic Ithaca bikeshare network. Inspect current inventory, find empty/full stations, review manual inventory actions, and explore hourly history with Individuals charts.
 
 **20 fictional stations · 300 bikes docked or in transit · hourly snapshots · two synthetic scenarios.** No live telemetry or automated dispatch. The React dashboard retains its same-hour Individuals calculations and optional eight-rule diagnosis.
@@ -178,7 +188,7 @@ Tests cover known-answer statistics, constant/insufficient data, missing schedul
 
 This builds React, exports locked runtime requirements, copies only runtime code/data/assets into `build/connect`, generates a FastAPI manifest and verifies its checksums. `app/manifest.json` records that local bundle. React assets are served by FastAPI, so only one content item is needed.
 
-When publisher environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are configured, an explicitly invoked `./app/deployme` publishes the verified bundle using the course's supplied Connect helper. Never put credentials in tracked files. The Connect server must provide a compatible Python 3.12 interpreter. Verify public access and the demo checkpoints after deployment; a local build is not a public deployment. No remote URL is claimed here.
+When publisher environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are configured, an explicitly invoked `./app/deployme` publishes the verified bundle using the course's supplied Connect helper. Never put credentials in tracked files. The Connect server must provide a compatible Python 3.12 interpreter. Recheck public access and the demo checkpoints after each deployment; a local build is not a public deployment. The current public dashboard is linked at the top of this README.
 
 ## Project structure
 
@@ -189,4 +199,4 @@ When publisher environment variables `CONNECT_SERVER` and `CONNECT_API_KEY` are 
 - `tests/`: statistical, plotting and API checks.
 - `scripts/`: deployment bundle preparation and verification.
 
-The FastAPI and React starters come from the repository's `demos/`; deployment publishing reuses its `connect-publish` helper. The previous Streamlit development remains archived in Git stash and is not a runtime dependency.
+The FastAPI and React starters come from the repository's `demos/`; deployment publishing reuses its `connect-publish` helper. Earlier Streamlit development is not part of the current runtime; a fresh clone does not require a developer's local stash.

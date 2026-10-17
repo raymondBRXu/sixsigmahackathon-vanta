@@ -25,6 +25,28 @@ spec: SPEC.md
 updated: "2026-10-17"
 
 tasks:
+  - id: H-16
+    title: Consolidate competition documentation, README and data codebook
+    points: "Function documentation 10, working datasets 5, codebook 5 and reproducibility 5"
+    status: done
+    owner: "Codex with independent codebook and function reviewers"
+    started_at: "2026-10-17"
+    owns: ["docs/DOCUMENTATION.md", "README.md", "app/README.md", "data/README.md", "CONTRACT.yaml"]
+    notes: >
+      User requests a complete repository Documentation document, including
+      README and codebook content, based on updated main 253ecc7. No webpage
+      changes requested. Work in separate local branch chi/documentation-integrated;
+      preserve application code, dataset bytes and the previous documentation draft.
+      User subsequently authorized publication to main and supplied the public
+      dashboard URL for the README; anonymous page/API access was verified.
+    definition_of_done: >
+      One self-contained document explains use, functions, inputs, parameters,
+      outputs, formulas, all data files/variables, collection, reproduction
+      and two-scenario demo. Check against current sources and official rubric;
+      links, YAML and git diff --check pass. Distinguish current validation
+      from prior test evidence and unverified publication/deployment.
+    result: "Completed consolidated Documentation and three README entry points, including the user-supplied public app/API links. 32 relative links/anchors, YAML and git diff --check pass. Current-source examples, CSV schemas/keys/shared history, normal bounds and four artifact hashes verified. Prior 240 Python/data and 89 frontend tests are explicitly attributed to identical source at 47e05fe. Anonymous hosted page/API requests returned HTTP 200 and the Disruption checkpoint matched. Only documentation/ledger changed; no app deployment or competition submission performed. Main publication explicitly authorized by user."
+
   - id: H-15
     title: Align SPEC with the current main implementation and organizer template
     points: "Tool scope, statistical clarity and documentation"
