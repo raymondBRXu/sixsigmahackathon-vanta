@@ -3,6 +3,7 @@ import * as maplibregl from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { STATUS, count, formatTime } from '../format.js'
+import './StationMap.css'
 
 maplibregl.setWorkerUrl(workerUrl)
 
@@ -40,14 +41,34 @@ function popupContent(station, timezone) {
   return container
 }
 
-export default function StationMap({ stations, selected, tiles, timezone, onSelect, camera }) {
+export default function StationMap({ stations, selected, tiles, timezone, onSelect, camera,
+  highlightedStation = null, onHoverStation, onFocusStation }) {
   const container = useRef(null)
   const map = useRef(null)
   const markers = useRef(new Map())
   const displayedTiles = useRef(tiles)
   const onSelectRef = useRef(onSelect)
+  const onHoverRef = useRef(onHoverStation)
+  const onFocusRef = useRef(onFocusStation)
+  const hoveredStation = useRef(null)
+  const focusedStation = useRef(null)
+  const availableStations = useRef(new Set())
   const [tileError, setTileError] = useState(false)
   onSelectRef.current = onSelect
+  onHoverRef.current = onHoverStation
+  onFocusRef.current = onFocusStation
+  availableStations.current = new Set(stations.map((station) => station.station_id))
+
+  function clearInteractions(stationId = null) {
+    if (hoveredStation.current !== null && (stationId === null || hoveredStation.current === stationId)) {
+      hoveredStation.current = null
+      onHoverRef.current?.(null)
+    }
+    if (focusedStation.current !== null && (stationId === null || focusedStation.current === stationId)) {
+      focusedStation.current = null
+      onFocusRef.current?.(null)
+    }
+  }
 
   useEffect(() => {
     const instance = new maplibregl.Map({
@@ -67,7 +88,12 @@ export default function StationMap({ stations, selected, tiles, timezone, onSele
     return () => {
       camera.current = { center: instance.getCenter().toArray(), zoom: instance.getZoom() }
       observer.disconnect()
-      markers.current.forEach(({ marker, popup }) => { popup.remove(); marker.remove() })
+      markers.current.forEach(({ marker, popup, button }) => {
+        button.classList.remove('linked-highlight')
+        popup.remove()
+        marker.remove()
+      })
+      clearInteractions()
       markers.current.clear()
       instance.remove()
       map.current = null
@@ -85,10 +111,23 @@ export default function StationMap({ stations, selected, tiles, timezone, onSele
 
   useEffect(() => {
     const instance = map.current
-    if (!stations.length) return
+    if (!stations.length) {
+      markers.current.forEach(({ popup, button }) => {
+        popup.remove()
+        button.classList.remove('linked-highlight')
+      })
+      clearInteractions()
+      return
+    }
     const ids = new Set(stations.map((station) => station.station_id))
     markers.current.forEach((entry, id) => {
-      if (!ids.has(id)) { entry.popup.remove(); entry.marker.remove(); markers.current.delete(id) }
+      if (!ids.has(id)) {
+        entry.button.classList.remove('linked-highlight')
+        entry.popup.remove()
+        entry.marker.remove()
+        markers.current.delete(id)
+        clearInteractions(id)
+      }
     })
     stations.forEach((station) => {
       let entry = markers.current.get(station.station_id)
@@ -100,12 +139,32 @@ export default function StationMap({ stations, selected, tiles, timezone, onSele
         const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 17, maxWidth: '320px' })
         const marker = new maplibregl.Marker({ element: button })
           .setLngLat([station.longitude, station.latitude]).addTo(instance)
-        const show = () => popup.addTo(instance)
-        const hide = () => popup.remove()
-        button.addEventListener('mouseenter', show)
-        button.addEventListener('mouseleave', hide)
-        button.addEventListener('focus', show)
-        button.addEventListener('blur', hide)
+        button.addEventListener('mouseenter', () => {
+          if (!availableStations.current.has(station.station_id)) return
+          popup.addTo(instance)
+          hoveredStation.current = station.station_id
+          onHoverRef.current?.(station.station_id)
+        })
+        button.addEventListener('mouseleave', () => {
+          if (focusedStation.current !== station.station_id) popup.remove()
+          if (hoveredStation.current === station.station_id) {
+            hoveredStation.current = null
+            onHoverRef.current?.(null)
+          }
+        })
+        button.addEventListener('focus', () => {
+          if (!availableStations.current.has(station.station_id)) return
+          popup.addTo(instance)
+          focusedStation.current = station.station_id
+          onFocusRef.current?.(station.station_id)
+        })
+        button.addEventListener('blur', () => {
+          if (hoveredStation.current !== station.station_id) popup.remove()
+          if (focusedStation.current === station.station_id) {
+            focusedStation.current = null
+            onFocusRef.current?.(null)
+          }
+        })
         button.addEventListener('click', (event) => event.stopPropagation())
         button.addEventListener('dblclick', (event) => {
           event.preventDefault()
@@ -134,6 +193,12 @@ export default function StationMap({ stations, selected, tiles, timezone, onSele
       button.setAttribute('aria-pressed', String(id === selected))
     })
   }, [selected, stations])
+
+  useEffect(() => {
+    markers.current.forEach(({ button }, id) => {
+      button.classList.toggle('linked-highlight', stations.length > 0 && id === highlightedStation)
+    })
+  }, [highlightedStation, stations])
 
   return <>
     <div ref={container} className="station-map" aria-label="Map of 20 simulated Ithaca bikeshare stations" />

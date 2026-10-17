@@ -2,7 +2,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 
-vi.mock('./components/StationMap.jsx', () => ({ default: () => <div aria-label="Station map" /> }))
+vi.mock('./components/StationMap.jsx', () => ({ default: ({ stations, highlightedStation, onHoverStation, onFocusStation }) =>
+  <div aria-label="Station map" data-highlighted={highlightedStation || ''}>
+    {stations.map((station) => <button key={station.station_id} aria-label={`Map station ${station.station_id}`}
+      onMouseEnter={() => onHoverStation(station.station_id)} onMouseLeave={() => onHoverStation(null)}
+      onFocus={() => onFocusStation(station.station_id)} onBlur={() => onFocusStation(null)} />)}
+  </div> }))
 
 // jsdom does not implement the native dialog lifecycle; focus and inertness are browser checks.
 const dialogMethods = Object.fromEntries(['showModal', 'close'].map((name) => [name, Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, name)]))
@@ -29,7 +34,7 @@ const stations = [
 ]
 const scenarios = [{ id: 'normal', label: 'Normal operations' }, { id: 'edge_cases', label: 'Edge cases' }]
 
-function mockApi({ missing = false, uploadError = false, configOverrides = {}, summary, diagnosisResult } = {}) {
+function mockApi({ missing = false, uploadError = false, configOverrides = {}, summary, diagnosisResult, snapshotRows } = {}) {
   const config = (source) => ({ source: { id: source, label: `${source}.csv`, observations: 10 }, timestamps,
     service_dates: ['2026-09-28'], hours, timezone: 'America/New_York', stations, scenarios, default_cursor: 2, ...configOverrides })
   const rows = stations.map((station, index) => ({
@@ -40,6 +45,7 @@ function mockApi({ missing = false, uploadError = false, configOverrides = {}, s
   }))
   const fetch = vi.fn(async (url) => {
     const request = new URL(url)
+    const currentRows = snapshotRows ? snapshotRows(Number(request.searchParams.get('cursor')), rows) : rows
     if (request.pathname.endsWith('/uploads') && uploadError) return { ok: false, status: 422, json: async () => ({ detail: 'Duplicate station/timestamp rows are not allowed.' }) }
     if (request.pathname.endsWith('/realtime')) {
       const sourceConfig = config(request.searchParams.get('source'))
@@ -55,7 +61,7 @@ function mockApi({ missing = false, uploadError = false, configOverrides = {}, s
     }
     const payload = request.pathname.endsWith('/config') ? config(request.searchParams.get('source'))
       : request.pathname.endsWith('/snapshot') ? {
-        stations: rows, queue: rows.filter((row) => row.status !== 'normal'),
+        stations: currentRows, queue: currentRows.filter((row) => row.status !== 'normal'),
         metrics: { availability: missing ? 0 : 0.5, available_count: missing ? 0 : 1, empty_count: 1, full_count: 0, n: missing ? 1 : 2, planned: 2, empty_rate: missing ? 1 : 0.5, full_rate: 0, coverage: missing ? 0.5 : 1 },
       } : {
         capacity: 30,
@@ -98,6 +104,91 @@ async function openStationHistory(station = 'S01') {
 }
 
 describe('dashboard end-to-end component wiring', () => {
+  it('links queue, alert and map hover/focus and clears old-time highlights', async () => {
+    mockApi({ snapshotRows: (_, rows) => rows.map((row, index) => index ? row : { ...row, bikes: 30, status: 'full' }) })
+    render(<App />)
+    await screen.findByText('30 / 30')
+    expect(screen.queryByText('Ithaca — simulated bikeshare network')).toBeNull()
+    const alerts = screen.getByRole('region', { name: 'Station inventory alerts' })
+    expect(within(alerts).getAllByRole('button', { name: /Open live chart/ })).toHaveLength(2)
+    const row = within(screen.getByRole('table')).getByRole('row', { name: /S02 · Appel Commons/ })
+    const alert = within(alerts).getByRole('button', { name: /^S02 empty:/ }).closest('.inventory-alert')
+    const map = screen.getByLabelText('Station map')
+    fireEvent.mouseEnter(row)
+    expect(map.dataset.highlighted).toBe('S02')
+    expect(alert.classList.contains('linked-highlight')).toBe(true)
+    fireEvent.mouseLeave(row)
+    expect(map.dataset.highlighted).toBe('')
+    fireEvent.focus(alert.querySelector('button'))
+    expect(map.dataset.highlighted).toBe('S02')
+    fireEvent.blur(alert.querySelector('button'))
+    fireEvent.mouseEnter(alert)
+    expect(row.classList.contains('linked-highlight')).toBe(true)
+    expect(map.dataset.highlighted).toBe('S02')
+    fireEvent.mouseLeave(alert)
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Map station S01' }))
+    expect(within(alerts).getByRole('button', { name: /^S01 full:/ }).closest('.inventory-alert').classList.contains('linked-highlight')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Step →' }))
+    await screen.findByText('30 / 30')
+    expect(map.dataset.highlighted).toBe('')
+    expect(document.querySelectorAll('.linked-highlight')).toHaveLength(0)
+    fireEvent.click(screen.getByRole('button', { name: '← Step' }))
+    await screen.findByText('30 / 30')
+    expect(map.dataset.highlighted).toBe('')
+  })
+
+  it('dismisses without pausing, opens the matching live chart, and keeps its points updating', async () => {
+    const fetch = mockApi({ configOverrides: multiDayConfig,
+      snapshotRows: (_, rows) => rows.map((row, index) => index ? row : { ...row, bikes: 30, status: 'full' }) })
+    render(<App />)
+    await screen.findByText('30 / 30')
+    vi.useFakeTimers()
+    fireEvent.click(screen.getByRole('button', { name: /Play/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss full alert for S01' }))
+    expect(screen.queryByRole('button', { name: /^S01 full:/ })).toBeNull()
+    expect(screen.getByLabelText('Station map')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Pause/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^S02 empty:/ }))
+    await act(async () => {})
+    expect(lastRealtimeParams(fetch)).toEqual({ source: 'normal', cursor: '7' })
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: /^History for S02 ·/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Pause/ })).toBeTruthy()
+    await act(async () => { vi.advanceTimersByTime(2000) })
+    expect(lastRealtimeParams(fetch).cursor).toBe('8')
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: /Back to all stations/ }))
+    expect(screen.getAllByRole('article')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    expect(screen.queryByRole('button', { name: /^S01 full:/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /^S02 empty:/ })).toBeTruthy()
+  })
+
+  it('removes recovered alerts and rearms dismissed alerts even when recovery happens in station view', async () => {
+    mockApi({ configOverrides: multiDayConfig,
+      snapshotRows: (cursor, rows) => rows.map((row, index) => index && cursor === 8 ? { ...row, bikes: 15, status: 'normal' } : row) })
+    render(<App />)
+    await screen.findByText('18 / 30')
+    fireEvent.click(screen.getByRole('button', { name: 'Step →' }))
+    await screen.findByText('No active empty or full alerts.')
+    fireEvent.click(screen.getByRole('button', { name: 'Step →' }))
+    await screen.findByRole('button', { name: /^S02 empty:/ })
+    fireEvent.click(screen.getByRole('button', { name: '← Step' }))
+    await screen.findByText('No active empty or full alerts.')
+    fireEvent.click(screen.getByRole('button', { name: '← Step' }))
+    await screen.findByRole('button', { name: /^S02 empty:/ })
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss empty alert for S02' }))
+    fireEvent.click(screen.getByRole('button', { name: 'View by Station' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Step →' }))
+    await waitFor(() => expect(screen.getByRole('slider', { name: 'Simulation time' }).value).toBe('8'))
+    // Allow the shared snapshot request to settle while the overview is unmounted.
+    await act(async () => {})
+    fireEvent.click(screen.getByRole('button', { name: 'Step →' }))
+    await act(async () => {})
+    fireEvent.click(screen.getByRole('button', { name: 'Overview' }))
+    expect(await screen.findByRole('button', { name: /^S02 empty:/ })).toBeTruthy()
+  })
+
   it('locks all dates for opt-in diagnosis, clears stale issues on hour changes, and unlocks on cancel', async () => {
     const issues = [
       { id: 'T1', title: 'Beyond control limits', description: 'One point is more than three sigma from the center line.', point_indices: [1], event_count: 1 },
@@ -173,12 +264,20 @@ describe('dashboard end-to-end component wiring', () => {
     expect(screen.getByRole('slider', { name: 'Simulation time' }).value).toBe('7')
   })
 
-  it('streams hourly updates, pauses for History and keeps its cursor when the dialog closes', async () => {
+  it('keeps one sidebar clock across station navigation, hourly updates and History', async () => {
     const fetch = mockApi({ configOverrides: multiDayConfig })
     render(<App />)
     await screen.findByText('18 / 30')
+    const expectSidebarClock = () => {
+      const clocks = screen.getAllByRole('region', { name: 'Simulation playback' })
+      expect(clocks).toHaveLength(1)
+      expect(within(screen.getByRole('complementary', { name: 'Dashboard settings' })).getByRole('region', { name: 'Simulation playback' })).toBe(clocks[0])
+      expect(within(screen.getByRole('main')).queryByRole('region', { name: 'Simulation playback' })).toBeNull()
+    }
+    expectSidebarClock()
     fireEvent.click(screen.getByRole('button', { name: 'View by Station' }))
     await waitFor(() => expect(lastRealtimeParams(fetch).cursor).toBe('7'))
+    expectSidebarClock()
     vi.useFakeTimers()
     fireEvent.click(screen.getByRole('button', { name: /Play/ }))
     await act(async () => { vi.advanceTimersByTime(2000) })
@@ -187,12 +286,14 @@ describe('dashboard end-to-end component wiring', () => {
     fireEvent.click(screen.getByRole('button', { name: /^History for S02 ·/ }))
     await act(async () => { vi.advanceTimersByTime(4000) })
     expect(screen.getByRole('dialog', { name: 'Station history' })).toBeTruthy()
+    expectSidebarClock()
     expect(lastAnalysisParams(fetch)).toMatchObject({ station_id: 'S02', hour: '7', cursor: '14' })
     expect(lastRealtimeParams(fetch).cursor).toBe('8')
     expect(screen.getByRole('button', { name: /Play/ }).disabled).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Close history' }))
     await act(async () => { vi.advanceTimersByTime(4000) })
     expect(screen.queryByRole('dialog')).toBeNull()
+    expectSidebarClock()
     expect(screen.getByRole('slider', { name: 'Simulation time' }).value).toBe('8')
     expect(screen.getByRole('button', { name: /Play/ }).disabled).toBe(false)
     expect(screen.getAllByRole('article')).toHaveLength(2)
@@ -206,7 +307,9 @@ describe('dashboard end-to-end component wiring', () => {
     expect(screen.getByText(/Last reading: 18 bikes/)).toBeTruthy()
     const queue = screen.getByRole('table')
     expect(within(queue).getByText('Appel Commons')).toBeTruthy()
-    expect(within(queue).getByText('Reinspect')).toBeTruthy()
+    expect(within(queue).getByText('Stale')).toBeTruthy()
+    expect(within(queue).getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual(['Station', 'Bikes', 'State'])
+    expect(within(queue).queryByText('Reinspect')).toBeNull()
     fireEvent.change(screen.getByLabelText('Station'), { target: { value: 'S02' } })
     expect(await screen.findByText('0 / 30')).toBeTruthy()
     expect(screen.getByRole('link', { name: /Download current snapshot/ }).href).toContain('/api/snapshot.csv?source=normal&cursor=2')

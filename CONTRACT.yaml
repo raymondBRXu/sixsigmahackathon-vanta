@@ -25,10 +25,34 @@ spec: SPEC.md
 updated: "2026-10-17"
 
 tasks:
+  - id: H-12
+    title: Link inventory alerts and place playback controls in the sidebar
+    points: "Dashboard usability and clear current inventory actions"
+    status: done
+    owner: "Codex with disjoint map, realtime navigation and integration subtasks"
+    started_at: "2026-10-17"
+    owns: ["app/frontend/", "SPEC.md", "README.md", "docs/plan.md", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested after the saved 10a2dcf dashboard snapshot.
+      Remove the Action queue Move column. Replace the map heading with one
+      horizontal row of red, dismissible empty/full alerts. Opening an alert
+      shows its station's enlarged realtime chart without stopping playback.
+      Link queue rows, alert prompts and map markers on hover and keyboard focus.
+      A closed alert stays hidden during its current continuous condition;
+      recovery clears it and a later new empty/full condition can alert again.
+      Follow-up request moves the shared Play/Pause, previous/next Step and
+      simulation timeline into the sidebar, preserving playback and History
+      behavior in both dashboard views and keeping narrow layouts usable.
+    definition_of_done: >
+      npm test and npm run build in app/frontend pass; browser checks cover
+      alert resolution/dismissal, realtime navigation and playback, linked
+      highlights, sidebar playback placement and narrow layouts; git diff --check passes.
+    result: "Implemented and verified; local snapshot commit authorized by the user. Alert linkage passed 89 frontend tests. Sidebar relocation passed all 16 App integration tests, production build, playback/History/source-change browser checks and 1024px/390px/320px layouts; git diff --check passes."
+
   - id: H-11
     title: Add interactive station History diagnosis with eight pattern tests
     points: "Preserves valid QC analysis and makes pattern evidence inspectable"
-    status: in_progress
+    status: done
     owner: "Codex with disjoint statistical, interaction and verification subtasks"
     started_at: "2026-10-17"
     owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/plan.md", "CONTRACT.yaml"]
@@ -45,7 +69,7 @@ tasks:
       in app/frontend pass; browser verifies range locking/unlocking, hover,
       issue switching, station/hour isolation and responsive layout;
       git diff --check passes.
-    result: "Implemented and verified: 216 Python tests and 60 frontend tests pass; production build and diff checks pass. Browser confirms full-range lock/unlock, per-issue red points and explanations, point details, hour/station reset and responsive layout. Independent statistical/integration review passed. Updated app runs on localhost port 8000; changes remain uncommitted."
+    result: "Saved in 10a2dcf (react + test), verified clean on 2026-10-17. 216 Python tests and 60 frontend tests pass; production build, browser checks and independent review passed."
 
   - id: H-10
     title: Add station chart views for date analysis and realtime operations

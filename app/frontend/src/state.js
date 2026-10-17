@@ -6,6 +6,7 @@ export const initialState = {
   hour: 7,
   station: 'S01',
   operationsView: 'Overview',
+  realtimeStation: null,
   historyStation: null,
   diagnosis: false,
   playing: false,
@@ -25,7 +26,7 @@ function moveCursor(state, cursor) {
 export function dashboardReducer(state, action) {
   switch (action.type) {
     case 'sourceRequested':
-      return { ...state, source: action.source, loading: true, playing: false, historyStation: null, diagnosis: false, error: '' }
+      return { ...state, source: action.source, loading: true, playing: false, historyStation: null, realtimeStation: null, diagnosis: false, error: '' }
     case 'sourceLoaded': {
       const config = action.config
       const cursor = config.default_cursor
@@ -33,7 +34,7 @@ export function dashboardReducer(state, action) {
         ? state.station : config.stations[0].station_id
       const hour = config.hours.includes(state.hour) ? state.hour : config.hours[0]
       return { ...state, config, source: config.source.id, station, cursor, hour,
-        dateRange: [0, config.service_dates.length - 1], historyStation: null, diagnosis: false, playing: false, loading: false, error: '' }
+        dateRange: [0, config.service_dates.length - 1], historyStation: null, realtimeStation: null, diagnosis: false, playing: false, loading: false, error: '' }
     }
     case 'sourceFailed':
       return { ...state, loading: false, error: action.message, playing: false }
@@ -42,7 +43,11 @@ export function dashboardReducer(state, action) {
     case 'selectHour':
       return state.config.hours.includes(action.hour) ? { ...state, hour: action.hour } : state
     case 'selectOperationsView':
-      return { ...state, operationsView: action.view, historyStation: null, diagnosis: false }
+      return { ...state, operationsView: action.view, realtimeStation: null, historyStation: null, diagnosis: false }
+    case 'openRealtimeStation':
+      if (!state.config?.stations.some((station) => station.station_id === action.station)) return state
+      return { ...state, operationsView: 'View by Station', realtimeStation: action.station,
+        station: action.station, historyStation: null, diagnosis: false }
     case 'openHistory':
       if (!state.config?.stations.some((station) => station.station_id === action.station)) return state
       return { ...state, historyStation: action.station, playing: false, diagnosis: false,

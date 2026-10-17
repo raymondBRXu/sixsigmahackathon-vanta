@@ -420,16 +420,22 @@ main {
 }
 
 .clock {
-  margin-bottom:30px;
+  min-width:0;
+  flex-shrink:0;
+  margin:22px 0 8px;
+  padding:17px 0;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
 }
 
 .clock-heading {
   display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:17px;
-  gap:16px;
-  font-size:14px;
+  flex-direction:column;
+  align-items:flex-start;
+  margin-bottom:13px;
+  gap:6px;
+  font-size:13px;
+  line-height:1.5;
 }
 
 .clock-heading strong {
@@ -437,6 +443,7 @@ main {
 }
 
 .clock-tag {
+  order:-1;
   font-size:9px;
   letter-spacing:1.2px;
   color:#87988e;
@@ -444,13 +451,16 @@ main {
 
 .playback-buttons {
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
 }
 
 .playback-buttons button {
+  min-width:0;
   height:41px;
-  font-size:12px;
+  padding:7px 4px;
+  font-size:11px;
+  white-space:nowrap;
 }
 
 .playback-buttons .primary span {
@@ -1256,6 +1266,11 @@ input[type=range]::-moz-range-thumb {
   .sidebar>#station {
     grid-row:7;
   }
+  .sidebar>.clock {
+    grid-column:1/-1;
+    grid-row:8;
+    margin:6px 0;
+  }
   .sidebar>label[for=station] {
     grid-row:6;
   }
@@ -1286,17 +1301,11 @@ input[type=range]::-moz-range-thumb {
   .lede {
     font-size:13px;
   }
-  .clock-tag {
-    display:none;
-  }
-  .clock-heading {
-    font-size:12px;
-  }
   .playback-buttons {
     gap:9px;
   }
-  .clock {
-    margin-bottom:23px;
+  .playback-buttons button {
+    font-size:12px;
   }
   .metric-grid {
     grid-template-columns:repeat(2,minmax(0,1fr));

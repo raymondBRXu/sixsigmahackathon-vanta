@@ -12,6 +12,17 @@ const config = {
 const ready = () => dashboardReducer(initialState, { type: 'sourceLoaded', config })
 
 describe('dashboard navigation and playback', () => {
+  it('opens a live station from an alert without changing the clock or playback', () => {
+    const previous = { ...ready(), playing: true, historyStation: 'S01', diagnosis: true }
+    const state = dashboardReducer(previous, { type: 'openRealtimeStation', station: 'S20' })
+    expect(state).toMatchObject({ operationsView: 'View by Station', realtimeStation: 'S20', station: 'S20',
+      cursor: previous.cursor, playing: true, historyStation: null, diagnosis: false })
+    expect(dashboardReducer(state, { type: 'openRealtimeStation', station: 'S99' })).toBe(state)
+    for (const action of [{ type: 'selectOperationsView', view: 'Overview' },
+      { type: 'sourceRequested', source: 'edge_cases' }, { type: 'sourceLoaded', config }]) {
+      expect(dashboardReducer(state, action).realtimeStation).toBeNull()
+    }
+  })
   it('locks the full history range for diagnosis until explicitly toggled off', () => {
     let state = dashboardReducer(ready(), { type: 'openHistory', station: 'S20' })
     expect(state.diagnosis).toBe(false)

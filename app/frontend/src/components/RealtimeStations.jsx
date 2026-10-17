@@ -104,12 +104,13 @@ function StationCard({ station, readings, slots, referenceLines, timestamp, time
   </article>
 }
 
-export default function RealtimeStations({ state, onHistory }) {
+export default function RealtimeStations({ state, onHistory, initialExpandedStation = null }) {
   const { source, cursor, config, playing } = state
-  const [expandedStation, setExpandedStation] = useState(null)
+  const [expandedStation, setExpandedStation] = useState(() =>
+    config.stations.some((station) => station.station_id === initialExpandedStation) ? initialExpandedStation : null)
   const backButton = useRef(null)
   const expandButtons = useRef(new Map())
-  const returnStation = useRef(null)
+  const returnStation = useRef(expandedStation)
   const { data, error } = useResource('realtime', { source, cursor })
   const timezone = config.timezone
   const referenceLines = data?.reference_lines || REFERENCE_LINES

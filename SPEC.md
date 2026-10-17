@@ -41,8 +41,8 @@ screenshot, rather than a strict municipal-boundary model. Place 20 fictional st
 around Downtown Ithaca, the Cornell area, the waterfront/Stewart Park area, Cayuga
 Heights, East Ithaca and South Hill. Exact station locations will be set and visually
 checked during data preparation; do not claim they are existing bikeshare facilities.
-Use the same station IDs and coordinates in all scenarios. The map is labeled
-“Ithaca — simulated bikeshare network”; coordinates locate stations but do not change
+Use the same station IDs and coordinates in all scenarios. The dashboard identifies
+the network as synthetic; coordinates locate stations but do not change
 the statistical formulas or imply measured local demand.
 
 ## 4. The statistics, and why (rubric: valid QC analysis 25)
@@ -105,11 +105,31 @@ require reinspection; even fresh counts are labeled with their timestamp and req
 confirmation before a physical move. Demo freshness uses the displayed scenario time.
 Rank fresh empty/full stations first, then low/high stock; include missing/stale stations for reinspection. No automatic dispatch or guaranteed route.
 
+The Action queue displays Station, Bikes and State, with no Move column. Above
+the map, a single horizontal strip of red alerts replaces the old map heading.
+Each station with a current empty/full reading has one alert with its station
+identifier, name and status. The strip scrolls horizontally when necessary.
+The close control dismisses the continuous station/status condition; a recovery
+or change of critical state clears that dismissal so a new condition can appear.
+Changing source or seeking to a nonconsecutive time resets dismissed conditions.
+Missing/currently loading data never produce empty/full alerts from stale counts.
+Opening an alert goes directly to the station's enlarged realtime chart, retaining
+the current time and playing/paused state. It does not open historical diagnosis.
+Hovering or focusing a queue row, alert or map marker highlights that station
+across the visible elements, including a halo around its map marker. Dismissal
+does not change station readings or remove the station from the queue/map.
+
 Clicking any realtime station card opens a larger, single-station chart in the
 same View by Station page. The shared playback controls remain available, and the
 eight-slot window and fixed 15/24/6 lines continue updating. A Back to all
 stations button or Escape restores the 20 fixed-size cards and keyboard focus
 to the station chart that was opened. Focused charts support Enter or Space to enlarge. The separate History button opens history without also enlarging the realtime chart; Escape inside History closes only that modal.
+
+The shared simulation clock lives in the sidebar below the station selector:
+current date/time, Play/Pause, previous/next Step and the full-range timeline.
+There is only one clock in both Overview and View by Station. On narrow screens
+it spans the settings panel width. Loading/error states hide unavailable controls;
+History retains its existing pause behavior and separate analysis date controls.
 
 Hourly snapshots do not measure failed attempts, exact downtime, separate pickup/return
 counts, or the cause of inventory changes. The MVP supports snapshot export; manual entry, persistent review records and session logging are deferred.

@@ -236,3 +236,66 @@ Verification on 2026-10-17:
   was reloaded and verified with Morning disruption, S01, 07:00 and diagnosis on
   (T1/T2/T3/T4/T7 tabs). The temporary port 8001 verification server/tab are cleaned
   up after testing. Work is verified and remains uncommitted.
+
+## Linked inventory alerts and map interactions (H-12)
+
+The starting snapshot was clean and saved in `10a2dcf` (`react + test`).
+The Action queue now has Station, Bikes and State columns. A single horizontal
+strip of red empty/full alerts replaces the old map heading. Each alert opens
+its station's enlarged realtime chart without changing the playback state or
+clock. Close controls dismiss only the current continuous station/status
+condition; valid recovery or a different critical condition permits another
+alert. Missing/loading readings hide alerts without implying recovery. A source
+change, rewind or nonconsecutive seek resets dismissals.
+
+The shared snapshot and alert lifecycle stay mounted in App so recovery is
+observed while viewing live charts. Queue rows, alerts and map markers link on
+hover/focus through a station ID. The marker halo preserves status color,
+selection, camera and marker instances. Changing the source or cursor clears
+transient interaction state, including old focus from removed queue rows.
+
+Verification on 2026-10-17:
+
+- `npm test --prefix app/frontend`: `Test Files 10 passed (10)`,
+  `Tests 89 passed (89)`. Tests cover alert episodes, missing/loading states,
+  source/seek resets, independent dismissals, close versus navigation, shared
+  playback, direct station expansion and reciprocal hover/focus links.
+- `npm run build --prefix app/frontend`: `47 modules transformed`,
+  `built in 1.14s`; only the existing MapLibre bundle-size warning.
+- Browser on port 8000: at cursor 377, queue row S15 highlights its alert and
+  map halo. Closing S15 leaves S16 and keeps focus on its open button. At 378,
+  S15 remains empty in the queue but its dismissed alert stays hidden; S08/S09/
+  S12 show Full alerts. Opening S08 while playing preserves cursor 378 and
+  continues to cursor 381 with exactly one live chart and eight readings.
+  Back restores 20 cards. Returning to Overview shows S08 recovered to 29
+  bikes with no Full alert, while the remaining critical stations stay visible.
+- At 390px and 320px viewport widths, document width equals viewport width;
+  all alert cards have the same vertical position and scroll inside the strip.
+  Desktop screenshot confirms visible red prompts and a clear marker halo.
+  Browser error log is empty; the temporary viewport override is reset.
+- Independent review identified a possible stale focus on rewind; clearing
+  transient state on source/cursor change resolves it and has regression coverage.
+
+Implementation and validation are complete; changes remain uncommitted.
+
+### Sidebar playback follow-up
+
+The shared Clock component now appears once, below the Station selector in the
+sidebar, with its existing reducer and timer unchanged. Its three buttons stay
+on one row, with the selected date/time and timeline beneath the heading.
+Loading and source errors hide the clock until a valid configuration is ready.
+On narrow screens the clock spans the settings panel; the main content has no
+duplicate playback controls. History retains its own date range and pause behavior.
+
+- Existing App integration tests were extended to check sidebar containment
+  through Overview, station view, History and modal close: `16 tests passed`.
+- Production build: `47 modules transformed`, `built in 1.09s`; existing
+  MapLibre chunk-size warning only.
+- Browser: stepping 377 to 378 updates availability to 75%; playback advances
+  and pauses; timeline Home disables previous Step at 0, and End disables Play
+  and next Step at 599. All 20 realtime charts follow sidebar stepping.
+  History opens and disables playback, then closes normally. Switching to
+  Edge cases restores the sidebar clock and 100% availability at cursor 377.
+- At 1024px the sidebar buttons fit its narrower width. At 390px and 320px,
+  the page and clock have no horizontal overflow. Browser error log is empty;
+  viewport override is reset and the temporary verification tab is closed.

@@ -5,6 +5,8 @@ import { Clock } from './components/Controls.jsx'
 import { Operations } from './components/Views.jsx'
 import RealtimeStations from './components/RealtimeStations.jsx'
 import HistoryDialog from './components/HistoryDialog.jsx'
+import { useResource } from './hooks.js'
+import useInventoryAlerts from './useInventoryAlerts.js'
 
 export default function App() {
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
@@ -12,6 +14,8 @@ export default function App() {
   const camera = useRef(null)
   const uploadInput = useRef(null)
   const { config, loading, error } = state
+  const snapshot = useResource('snapshot', { source: state.source, cursor: state.cursor }, Boolean(config && !loading && !error))
+  const inventoryAlerts = useInventoryAlerts(state.source, state.cursor, snapshot.data)
 
   const loadSource = useCallback(async (source, file) => {
     sourceRequest.current?.abort()
@@ -73,6 +77,7 @@ export default function App() {
         onChange={(event) => dispatch({ type: 'selectStation', station: event.target.value })}>
         {config?.stations.map((station) => <option key={station.station_id} value={station.station_id}>{station.station_id} · {station.display_name}</option>)}
       </select>
+      {config && !loading && !error && <Clock state={state} dispatch={dispatch} />}
       <label className="toggle-control"><input type="checkbox" checked={state.tiles}
         onChange={(event) => dispatch({ type: 'setTiles', tiles: event.target.checked })} /><span className="toggle-track" aria-hidden="true" /><span>Street basemap</span></label>
       <p className="caption toggle-help">Turn off for a tile-free view when offline.</p>
@@ -106,10 +111,10 @@ export default function App() {
                 aria-pressed={state.operationsView === view} className={state.operationsView === view ? 'active' : ''}
                 onClick={() => dispatch({ type: 'selectOperationsView', view })}>{view}</button>)}
             </nav>
-            <Clock state={state} dispatch={dispatch} />
             {state.operationsView === 'View by Station' ? <RealtimeStations state={state}
+              initialExpandedStation={state.realtimeStation}
               onHistory={(station) => dispatch({ type: 'openHistory', station })} />
-              : <Operations state={state} dispatch={dispatch} camera={camera} />}
+              : <Operations state={state} dispatch={dispatch} camera={camera} snapshot={snapshot} inventoryAlerts={inventoryAlerts} />}
             {state.historyStation && <HistoryDialog state={state} dispatch={dispatch} />}
           </>}
       <footer className="page-footer">DOCKWATCH / TEAM VANTA · Synthetic inventory observations. No customer-attempt, exact outage-duration or causal performance claims.</footer>

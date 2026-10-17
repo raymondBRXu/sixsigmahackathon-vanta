@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import stationData from '../../../../data/stations.json'
 import RealtimeStations from './RealtimeStations.jsx'
@@ -46,6 +46,63 @@ function mockPlayback() {
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
 describe('realtime station charts', () => {
+  it('opens the requested station enlarged and continues its rolling window without reinitializing on updates', async () => {
+    const fetch = mockPlayback()
+    const onHistory = vi.fn()
+    const { rerender } = render(<RealtimeStations state={{ ...state, cursor: 7, playing: true }} initialExpandedStation="S07" onHistory={onHistory} />)
+    const card = screen.getByRole('article')
+    expect(card.classList.contains('realtime-station-expanded')).toBe(true)
+    expect(card.querySelector('.realtime-station-id').textContent).toBe('S07')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /Back to all stations/ }))
+    await waitFor(() => expect(card.querySelectorAll('.realtime-point')).toHaveLength(8))
+    expect([...card.querySelectorAll('.realtime-point')].map((point) => point.getAttribute('data-timestamp'))).toEqual(timestamps.slice(0, 8))
+    expect(screen.getByText('Playing simulation')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /^History for S07 ·/ }))
+    expect(onHistory).toHaveBeenCalledWith('S07')
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+
+    rerender(<RealtimeStations state={{ ...state, cursor: 8, playing: true }} initialExpandedStation="S12" onHistory={onHistory} />)
+    await waitFor(() => expect(card.querySelector('.realtime-point')?.getAttribute('data-timestamp')).toBe(timestamps[1]))
+    expect(screen.getByRole('article')).toBe(card)
+    expect(card.querySelector('.realtime-station-id').textContent).toBe('S07')
+    expect([...card.querySelectorAll('.realtime-point')].map((point) => point.getAttribute('data-timestamp'))).toEqual(timestamps.slice(1, 9))
+    expect([...card.querySelectorAll('.realtime-point')].map((point) => Number(point.getAttribute('data-bikes')))).toEqual(timestamps.slice(1, 9).map((timestamp) => counts.get(`S07/${timestamp}`)))
+    expect(screen.getByText('CL 15')).toBeTruthy()
+    expect(screen.getByText('Upper 24')).toBeTruthy()
+    expect(screen.getByText('Lower 6')).toBeTruthy()
+    expect(Object.fromEntries(new URL(fetch.mock.calls.at(-1)[0]).searchParams)).toEqual({ source: 'normal', cursor: '8' })
+  })
+
+  it.each(['Back', 'Escape'])('returns from an initially enlarged station with %s and focuses its chart', async (action) => {
+    mockPlayback()
+    const { rerender } = render(<RealtimeStations state={{ ...state, cursor: 7 }} initialExpandedStation="S20" />)
+    await waitFor(() => expect(screen.getByRole('article').querySelectorAll('.realtime-point')).toHaveLength(8))
+    const back = screen.getByRole('button', { name: /Back to all stations/ })
+    if (action === 'Back') fireEvent.click(back)
+    else fireEvent.keyDown(back, { key: 'Escape' })
+    expect(screen.getAllByRole('article')).toHaveLength(20)
+    const chart = screen.getByRole('img', { name: /^S20 ·/ })
+    expect(document.activeElement).toBe(chart)
+    expect(screen.queryByRole('button', { name: /Back to all stations/ })).toBeNull()
+
+    rerender(<RealtimeStations state={{ ...state, cursor: 8 }} initialExpandedStation="S20" />)
+    await waitFor(() => expect(chart.closest('article').querySelector('.realtime-point')?.getAttribute('data-timestamp')).toBe(timestamps[1]))
+    expect(screen.getAllByRole('article')).toHaveLength(20)
+    expect(document.activeElement).toBe(chart)
+    fireEvent.keyDown(screen.getByRole('img', { name: /^S03 ·/ }), { key: 'Enter' })
+    expect(screen.getAllByRole('article')).toHaveLength(1)
+    expect(screen.getByRole('article').querySelector('.realtime-station-id').textContent).toBe('S03')
+  })
+
+  it('falls back to all stations when the initial expanded station is not configured', async () => {
+    mockPlayback()
+    render(<RealtimeStations state={state} initialExpandedStation="S99" />)
+    expect(screen.getAllByRole('article')).toHaveLength(20)
+    expect(screen.queryByRole('button', { name: /Back to all stations/ })).toBeNull()
+    await waitFor(() => expect(screen.getAllByRole('article')[0].querySelectorAll('.realtime-point')).toHaveLength(1))
+    expect(screen.getAllByRole('article').every((card) => !card.classList.contains('realtime-station-expanded'))).toBe(true)
+  })
+
   it('fetches one batch and shows all 20 real station names in configuration order', async () => {
     const data = payload(7)
     data.stations.reverse()

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../api.js'
 import { useResource } from '../hooks.js'
-import { count, decimal, formatHour, formatTime, moveLabel, percent, STATUS } from '../format.js'
+import { count, decimal, formatHour, formatTime, percent, STATUS } from '../format.js'
 import { DateRangeSlider } from './Controls.jsx'
 import StationMap from './StationMap.jsx'
 import HistoryChart from './HistoryChart.jsx'
+import InventoryAlerts from './InventoryAlerts.jsx'
 
 export function Metric({ label, value, detail }) {
   return <div className="metric"><span className="metric-label">{label}</span><strong>{value}</strong>{detail && <span className="metric-detail">{detail}</span>}</div>
@@ -14,9 +15,20 @@ export function StatusBadge({ status }) {
   return <span className="status-badge" style={{ '--status-color': STATUS[status].color }}><i />{STATUS[status].label}</span>
 }
 
-export function Operations({ state, dispatch, camera }) {
+export function Operations({ state, dispatch, camera, snapshot, inventoryAlerts }) {
   const { source, cursor, station, config, tiles } = state
-  const { data, error } = useResource('snapshot', { source, cursor })
+  const { data, error } = snapshot
+  const [hovered, setHovered] = useState(null)
+  const [focused, setFocused] = useState(null)
+  const selectionKey = `${source}:${cursor}`
+  useEffect(() => {
+    setHovered(null)
+    setFocused(null)
+  }, [selectionKey])
+  const highlight = data ? (hovered?.key === selectionKey ? hovered.station
+    : focused?.key === selectionKey ? focused.station : null) : null
+  const onHover = (id) => setHovered(id ? { key: selectionKey, station: id } : null)
+  const onFocus = (id) => setFocused(id ? { key: selectionKey, station: id } : null)
   const metrics = data?.metrics
   const selected = data?.stations.find((row) => row.station_id === station)
   return <section aria-label="Operations overview" aria-busy={!data && !error}>
@@ -29,10 +41,14 @@ export function Operations({ state, dispatch, camera }) {
     </div>
     <div className="operations-grid">
       <div className="map-panel">
-        <h2>Ithaca — simulated bikeshare network</h2>
-        <p className="caption">Hover for a reading and action. Double-click a station to select its details.</p>
+        <InventoryAlerts alerts={inventoryAlerts.alerts} loading={!data && !error} error={error}
+          highlightedStation={highlight} onHover={onHover} onFocus={onFocus}
+          onDismiss={inventoryAlerts.dismiss}
+          onOpen={(id) => dispatch({ type: 'openRealtimeStation', station: id })} />
+        <p className="caption">Hover an alert, queue row or map point to locate its station. Select an alert to open its live chart.</p>
         <div className="map-shell">
           <StationMap stations={data?.stations || []} selected={station} tiles={tiles}
+            highlightedStation={highlight} onHoverStation={onHover} onFocusStation={onFocus}
             timezone={config.timezone} camera={camera}
             onSelect={(id) => dispatch({ type: 'selectStation', station: id })} />
           {!data && !error && <div className="map-loading" role="status">Loading snapshot…</div>}
@@ -40,19 +56,22 @@ export function Operations({ state, dispatch, camera }) {
       </div>
       <div className="queue-panel">
         <h2>Action queue</h2>
-        <p className="caption">Empty / full first, then low / high stock. Proposed moves target 50% occupancy.</p>
+        <p className="caption">Empty / full first, then low / high stock. Hover or focus a row to locate its station.</p>
         {data && (data.queue.length ? <div className="queue-scroll">
           <table className="queue-table">
             <caption className="sr-only">Current station inventory actions</caption>
-            <thead><tr><th>Station</th><th>Bikes</th><th>State</th><th>Move</th></tr></thead>
-            <tbody>{data.queue.map((row) => <tr key={row.station_id}>
+            <thead><tr><th>Station</th><th>Bikes</th><th>State</th></tr></thead>
+            <tbody>{data.queue.map((row) => <tr key={row.station_id} tabIndex={0} data-station={row.station_id}
+              className={highlight === row.station_id ? 'linked-highlight' : ''}
+              aria-label={`${row.station_id} · ${row.display_name}: ${count(row.bikes)} bikes, ${STATUS[row.status].label}`}
+              onMouseEnter={() => onHover(row.station_id)} onMouseLeave={() => onHover(null)}
+              onFocus={() => onFocus(row.station_id)} onBlur={() => onFocus(null)}>
               <td><strong>{row.station_id}</strong><span className="queue-station-name">{row.display_name}</span></td>
-              <td>{count(row.bikes)}</td><td><StatusBadge status={row.status} /></td><td className="move">{moveLabel(row.suggested_change)}</td>
+              <td>{count(row.bikes)}</td><td><StatusBadge status={row.status} /></td>
             </tr>)}</tbody>
           </table>
         </div> : <div className="success-message"><span aria-hidden="true">✓</span> No current inventory threshold actions.</div>)}
         {!data && !error && <div className="queue-placeholder" aria-hidden="true" />}
-        <p className="caption queue-note">Amounts are station targets, not a balanced truck route. Verify readings before a physical move.</p>
       </div>
     </div>
     <div className="station-detail">
