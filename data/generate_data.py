@@ -7,8 +7,9 @@ This is a conserving inventory simulator, not a customer-demand or SPC model.
 
 import argparse
 import csv
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 import hashlib
+import heapq
 import io
 import json
 import math
@@ -20,7 +21,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 SCENARIOS = ("normal", "disruption", "edge_cases")
 SCHEMA_VERSION = 1
-GENERATOR_VERSION = 3
+GENERATOR_VERSION = 4
 CAPACITY = 30
 FLEET = 300
 HOURS = list(range(7, 22))
@@ -56,15 +57,6 @@ def service_calendar(start):
     return days
 
 
-def transfer(inventory, source, destination):
-    """Move one bike instantaneously, if physically possible."""
-    if source != destination and inventory[source] > 0 and inventory[destination] < CAPACITY:
-        inventory[source] -= 1
-        inventory[destination] += 1
-        return True
-    return False
-
-
 def distance_km(first, second):
     """Straight-line great-circle separation, not road distance or travel time."""
     lat1, lat2 = math.radians(first["latitude"]), math.radians(second["latitude"])
@@ -85,104 +77,258 @@ def transfer_pairs(stations, sources, destinations):
     return pairs, weights
 
 
-def sampled_transfers(inventory, candidates, attempts, rng):
-    """Count synthetic transfer attempts and successes, never customer attempts."""
-    pairs, weights = candidates
-    successful = 0
-    for _ in range(attempts):
-        source, destination = rng.choices(pairs, weights=weights, k=1)[0]
-        successful += transfer(inventory, source, destination)
-    return successful
+def utc(instant):
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise ValueError("Simulation times must include a timezone")
+    return instant.astimezone(timezone.utc)
 
 
-def apply_fixture_station(inventory, station, target):
-    """Set one edge-fixture count through real conserving one-bike transfers."""
-    while inventory[station] != target:
-        if inventory[station] > target:
-            other = next(index for index in range(20) if index != station and inventory[index] < CAPACITY)
-            transfer(inventory, station, other)
-        else:
-            other = next(index for index in range(20) if index != station and inventory[index] > 0)
-            transfer(inventory, other, station)
+class Simulator:
+    """Individual-bike event simulator; no operator moves or inventory resets.
+
+    Public test interface: schedule_departure(), advance_to(), snapshot(), events,
+    and in_transit. Ties process arrivals before departures; snapshots follow both.
+    """
+
+    def __init__(self, stations, start, seed=5300):
+        self.stations = stations
+        self.ids = [station["station_id"] for station in stations]
+        self.index = {station_id: index for index, station_id in enumerate(self.ids)}
+        self.now = utc(start)
+        self.zone = ZoneInfo(TIMEZONE)
+        self.seed = seed
+        self.docked = [{"B%03d" % (index * 15 + bike + 1) for bike in range(15)} for index in range(20)]
+        self.in_transit = {}
+        self.events = []
+        self.queue = []
+        self.sequence = 0
+        self.trip_counter = 0
+        self.transfer_audit = {}
+
+    def iso(self, instant):
+        return instant.astimezone(self.zone).isoformat()
+
+    def snapshot(self):
+        return {station_id: len(self.docked[index]) for index, station_id in enumerate(self.ids)}
+
+    def duration(self, source, destination, rng):
+        # Explicit assumptions, not a route/elevation or observed speed model.
+        cycling_seconds = distance_km(self.stations[source], self.stations[destination]) * 1.3 / 12 * 3600
+        return max(300, math.ceil(cycling_seconds + rng.randint(180, 480)))
+
+    def _push(self, when, kind, payload):
+        self.sequence += 1
+        heapq.heappush(self.queue, (utc(when), 0 if kind == "arrival" else 1, self.sequence, kind, payload))
+
+    def _audit(self, phase, flow):
+        return self.transfer_audit.setdefault(phase, {}).setdefault(flow, {
+            "planned_transfers": 0, "successful_transfers": 0, "arrivals": 0, "reroutes": 0,
+        })
+
+    def schedule_departure(self, when, source_id, destination_id, flow="test", duration_seconds=None,
+                           phase="test", forbidden_ids=()):
+        when = utc(when)
+        if when < self.now:
+            raise ValueError("Cannot schedule a departure in the past")
+        source, destination = self.index[source_id], self.index[destination_id]
+        if source == destination:
+            raise ValueError("A ride needs different origin and destination stations")
+        if source_id in forbidden_ids or destination_id in forbidden_ids:
+            raise ValueError("A route includes an excluded fixture station")
+        if duration_seconds is None:
+            rng = random.Random(self.seed * 1000003 + int(when.timestamp()) + source * 31 + destination)
+            duration_seconds = self.duration(source, destination, rng)
+        if duration_seconds <= 0:
+            raise ValueError("Ride duration must be positive")
+        self._audit(phase, flow)["planned_transfers"] += 1
+        self._push(when, "departure", {"source": source, "destination": destination,
+                   "duration": duration_seconds, "flow": flow, "phase": phase,
+                   "forbidden_ids": tuple(forbidden_ids)})
+
+    def _depart(self, plan):
+        source, destination = plan["source"], plan["destination"]
+        if not self.docked[source]:
+            return  # Unfulfilled synthetic plan, not an observed customer failure.
+        bike_id = min(self.docked[source])
+        self.docked[source].remove(bike_id)
+        self.trip_counter += 1
+        trip_id = "T%06d" % self.trip_counter
+        due = self.now + timedelta(seconds=plan["duration"])
+        trip = dict(plan, bike_id=bike_id, trip_id=trip_id, arrival_due=due, reroute_count=0)
+        self.in_transit[bike_id] = trip
+        self._audit(plan["phase"], plan["flow"])["successful_transfers"] += 1
+        self.events.append({"event": "departure", "timestamp": self.iso(self.now), "bike_id": bike_id,
+                            "trip_id": trip_id, "station_id": self.ids[source],
+                            "destination_id": self.ids[destination], "arrival_due": self.iso(due), "flow": plan["flow"]})
+        self._push(due, "arrival", bike_id)
+
+    def _arrive(self, bike_id):
+        trip = self.in_transit[bike_id]
+        destination = trip["destination"]
+        if len(self.docked[destination]) < self.stations[destination]["capacity"]:
+            self.docked[destination].add(bike_id)
+            del self.in_transit[bike_id]
+            self._audit(trip["phase"], trip["flow"])["arrivals"] += 1
+            self.events.append({"event": "arrival", "timestamp": self.iso(self.now), "bike_id": bike_id,
+                                "trip_id": trip["trip_id"], "station_id": self.ids[destination]})
+            return
+        available = [index for index, station in enumerate(self.stations)
+                     if len(self.docked[index]) < station["capacity"] and station["station_id"] not in trip["forbidden_ids"]]
+        if not available:
+            raise ValueError("No permissible free dock remains for a rerouted bike")
+        alternative = min(available, key=lambda index: (distance_km(self.stations[destination], self.stations[index]), index))
+        trip["reroute_count"] += 1
+        rng = random.Random(self.seed * 1000003 + int(trip["trip_id"][1:]) * 7919 + trip["reroute_count"])
+        due = self.now + timedelta(seconds=self.duration(destination, alternative, rng))
+        trip["destination"], trip["arrival_due"] = alternative, due
+        self._audit(trip["phase"], trip["flow"])["reroutes"] += 1
+        self.events.append({"event": "reroute", "timestamp": self.iso(self.now), "bike_id": bike_id,
+                            "trip_id": trip["trip_id"], "station_id": self.ids[destination],
+                            "destination_id": self.ids[alternative], "arrival_due": self.iso(due)})
+        self._push(due, "arrival", bike_id)
+
+    def advance_to(self, when):
+        when = utc(when)
+        if when < self.now:
+            raise ValueError("Cannot advance simulation backwards")
+        while self.queue and self.queue[0][0] <= when:
+            self.now, _, _, kind, payload = heapq.heappop(self.queue)
+            if kind == "arrival":
+                self._arrive(payload)
+            else:
+                self._depart(payload)
+        self.now = when
+        docked = sum(map(len, self.docked))
+        if docked + len(self.in_transit) != FLEET:
+            raise ValueError("Docked plus in-transit fleet conservation failed")
 
 
-def apply_fixture_vector(inventory, targets):
-    """Plant an artificial software fixture; this is not an operator policy."""
-    if sum(targets) != sum(inventory):
-        raise ValueError("A fixture cannot add or remove fleet bikes")
-    while inventory != targets:
-        source = next(index for index in range(20) if inventory[index] > targets[index])
-        destination = next(index for index in range(20) if inventory[index] < targets[index])
-        transfer(inventory, source, destination)
-
-
-def edge_adjustments(inventory, day_index, hour):
-    # A constant later-hour baseline tests unsupported I-chart history while
-    # every sensor continues reporting correctly. Monitoring is not forced flat.
-    if day_index < BASELINE_DAYS:
-        apply_fixture_station(inventory, 19, 15)
-    if day_index == BASELINE_DAYS:
-        if hour == 9:
-            apply_fixture_vector(inventory, [15] * 20)
-        elif hour == 10:
-            apply_fixture_vector(inventory, [0] * 10 + [30] * 10)
-        elif hour == 11:
-            apply_fixture_vector(inventory, [6, 24, 5, 25, 0, 30] + [15] * 14)
-
-
-def generate_rows(scenario, seed, days, stations, zone):
-    homes = [index for index, station in enumerate(stations) if station["type"] == "residential"]
-    academic = [index for index, station in enumerate(stations) if station["type"] == "academic"]
-    hubs = [index for index, station in enumerate(stations) if station["type"] in ("mixed", "transport")]
+def candidate_flows(stations, excluded=()):
+    usable = [index for index, station in enumerate(stations) if station["station_id"] not in excluded]
+    homes = [index for index in usable if stations[index]["type"] == "residential"]
+    academic = [index for index in usable if stations[index]["type"] == "academic"]
+    hubs = [index for index in usable if stations[index]["type"] in ("mixed", "transport")]
+    leisure = [index for index in usable if stations[index]["type"] in ("mixed", "recreation")]
     if not homes or not academic:
         raise ValueError("Station configuration requires residential and academic anchors")
-    candidates = {
-        "background": transfer_pairs(stations, range(len(stations)), range(len(stations))),
+    return {
+        "background": transfer_pairs(stations, usable, usable),
         "morning_to_class": transfer_pairs(stations, homes, academic),
         "midday_exchange": transfer_pairs(stations, academic + hubs, academic + hubs),
         "afternoon_return": transfer_pairs(stations, academic, homes),
         "evening_return": transfer_pairs(stations, academic + hubs, homes),
+        "weekend_outing": transfer_pairs(stations, homes + hubs, leisure),
+        "weekend_return": transfer_pairs(stations, leisure + hubs, homes),
     }
-    rows = []
-    audit = {}
-    inventory = [15] * 20  # One initial allocation, only at the first service date.
-    for day_index, day in enumerate(days):
-        # Date-indexed random streams are reproducible, but inventories carry
-        # across dates and are NOT independent. No scenario-name seed is used.
-        rng = random.Random(seed * 1000003 + day_index * 9176)
-        for hour in HOURS:
-            plans = []
-            if hour > HOURS[0]:
-                peak = hour in (8, 9, 10, 17, 18, 19)
-                plans.append(("background", 10 if peak else 6))
-                if hour in (8, 9, 10):
-                    abnormal = scenario == "disruption" and day_index >= BASELINE_DAYS
-                    plans.append(("morning_to_class", (48 if abnormal else 16) + rng.randint(0, 6)))
-                elif hour in (11, 12, 13, 14):
-                    plans.append(("midday_exchange", 6 + rng.randint(0, 4)))
-                elif hour in (15, 16, 17):
-                    plans.append(("afternoon_return", 6 + rng.randint(0, 4)))
-                elif hour in (18, 19, 20, 21):
-                    plans.append(("evening_return", 9 + rng.randint(0, 4)))
-            phase = "baseline" if day_index < BASELINE_DAYS else "monitoring"
-            for flow, attempts in plans:
-                successful = sampled_transfers(inventory, candidates[flow], attempts, rng)
-                totals = audit.setdefault(phase, {}).setdefault(flow, {"planned_transfers": 0, "successful_transfers": 0})
-                totals["planned_transfers"] += attempts
-                totals["successful_transfers"] += successful
-            if scenario == "edge_cases" and hour > HOURS[0]:
-                edge_adjustments(inventory, day_index, hour)
-            timestamp = datetime.combine(day, time(hour), tzinfo=zone).isoformat()
-            rows.extend((timestamp, station["station_id"], inventory[index]) for index, station in enumerate(stations))
-    return rows, audit
 
 
-def validate_rows(rows, days, stations, zone):
+def hourly_plans(local, abnormal, rng):
+    """Synthetic attempt intensities for the hour starting at local time."""
+    hour = local.hour
+    if hour < 6:
+        return [("background", rng.randint(0, 2))]
+    if local.weekday() >= 5:
+        if hour < 10 or hour >= 21:
+            return [("background", rng.randint(1, 3))]
+        flow = "weekend_outing" if hour < 17 else "weekend_return"
+        return [("background", 4), (flow, rng.randint(2, 5))]
+    if hour == 6:
+        return [("background", 2), ("morning_to_class", rng.randint(4, 8))]
+    if hour < 10:
+        return [("background", 10), ("morning_to_class", (48 if abnormal else 16) + rng.randint(0, 6))]
+    if hour < 14:
+        return [("background", 6), ("midday_exchange", rng.randint(6, 10))]
+    if hour < 17:
+        return [("background", 6), ("afternoon_return", rng.randint(6, 10))]
+    if hour < 21:
+        return [("background", 10), ("evening_return", rng.randint(9, 13))]
+    return [("background", 2), ("evening_return", rng.randint(2, 5))]
+
+
+def schedule_fixture_rides(simulator, targets, deadline):
+    """Artificial positive-duration rider schedules, not operator redistribution."""
+    if simulator.in_transit or simulator.queue:
+        raise ValueError("Fixture scheduling requires earlier rides to have settled; no queue may be cleared")
+    counts = [len(bikes) for bikes in simulator.docked]
+    if sum(targets) != FLEET or any(not 0 <= count <= CAPACITY for count in targets):
+        raise ValueError("Invalid artificial fixture target")
+    rng = random.Random(simulator.seed * 1000003 + int(simulator.now.timestamp()))
+    ordinal = 0
+    while counts != targets:
+        source = next(index for index in range(20) if counts[index] > targets[index])
+        destination = next(index for index in range(20) if counts[index] < targets[index])
+        depart = simulator.now + timedelta(seconds=60 + ordinal % 240)
+        duration = simulator.duration(source, destination, rng)
+        if depart + timedelta(seconds=duration) >= utc(deadline):
+            raise ValueError("A fixture ride cannot reach its target before the scheduled snapshot")
+        simulator.schedule_departure(depart, simulator.ids[source], simulator.ids[destination],
+                                     "edge_fixture_rider_schedule", duration, "monitoring")
+        counts[source] -= 1
+        counts[destination] += 1
+        ordinal += 1
+
+
+def generate_rows(scenario, seed, days, stations, zone):
+    start = utc(datetime.combine(days[0], time(HOURS[0]), tzinfo=zone))
+    end = utc(datetime.combine(days[-1], time(HOURS[-1]), tzinfo=zone))
+    monitoring_start = utc(datetime.combine(days[BASELINE_DAYS], time(HOURS[0]), tzinfo=zone))
+    fixture_day = days[BASELINE_DAYS]
+    simulator = Simulator(stations, start, seed)
+    candidates = candidate_flows(stations)
+    constant_candidates = candidate_flows(stations, ("S20",))
+    rows, snapshot_audit = [], []
+    service_dates = set(days)
+    cursor = start
+    while cursor <= end:
+        # UTC event arithmetic traverses every physical hour, including DST,
+        # nights and weekends. Local time controls the hypothetical flow profile.
+        simulator.advance_to(cursor)
+        local = cursor.astimezone(zone)
+        if local.date() in service_dates and local.hour in HOURS:
+            timestamp = local.isoformat()
+            counts = simulator.snapshot()
+            rows.extend((timestamp, station_id, counts[station_id]) for station_id in simulator.ids)
+            snapshot_audit.append({"timestamp": timestamp, "docked": sum(counts.values()),
+                                   "in_transit": len(simulator.in_transit)})
+        if cursor == end:
+            break  # Pending rides remain in transit; no artificial final docking.
+        fixture_pause = scenario == "edge_cases" and local.date() == fixture_day and local.hour < 12
+        if fixture_pause:
+            if local.hour == 7:
+                schedule_fixture_rides(simulator, [15] * 20, cursor + timedelta(hours=2))
+            elif local.hour == 9:
+                schedule_fixture_rides(simulator, [0] * 10 + [30] * 10, cursor + timedelta(hours=1))
+            elif local.hour == 10:
+                schedule_fixture_rides(simulator, [6, 24, 5, 25, 0, 30] + [15] * 14, cursor + timedelta(hours=1))
+        else:
+            # No scenario-name seed: complete normal/disruption history is shared
+            # before the first monitoring date at 07:00, including latent rides.
+            rng = random.Random(seed * 1000003 + int(cursor.timestamp()) // 3600 * 9176)
+            phase = "monitoring" if cursor >= monitoring_start else "baseline"
+            abnormal = scenario == "disruption" and cursor >= monitoring_start
+            excluded = ("S20",) if scenario == "edge_cases" and cursor < monitoring_start else ()
+            flows = constant_candidates if excluded else candidates
+            for flow, attempts in hourly_plans(local, abnormal, rng):
+                pairs, weights = flows[flow]
+                for _ in range(attempts):
+                    source, destination = rng.choices(pairs, weights=weights, k=1)[0]
+                    departure = cursor + timedelta(seconds=rng.randint(1, 3599))
+                    duration = simulator.duration(source, destination, rng)
+                    simulator.schedule_departure(departure, simulator.ids[source], simulator.ids[destination],
+                                                 flow, duration, phase, excluded)
+        cursor += timedelta(hours=1)
+    return rows, simulator.transfer_audit, simulator.events, snapshot_audit
+
+
+def validate_rows(rows, days, stations, zone, snapshot_audit):
     """Validate generation invariants, without implementing product statistics."""
     expected_rows = len(days) * len(HOURS) * len(stations)
     if len(rows) != expected_rows:
         raise ValueError("Expected %s rows" % expected_rows)
+    if len(snapshot_audit) != len(days) * len(HOURS):
+        raise ValueError("Expected one fleet audit for every scheduled snapshot")
     offset = 0
+    snapshot_index = 0
     for day in days:
         for hour in HOURS:
             timestamp = datetime.combine(day, time(hour), tzinfo=zone).isoformat()
@@ -193,8 +339,12 @@ def validate_rows(rows, days, stations, zone):
             counts = [row[2] for row in snapshot]
             if any(type(count) is not int or not 0 <= count <= CAPACITY for count in counts):
                 raise ValueError("Inventory outside integer capacity bounds")
-            if sum(counts) != FLEET:
-                raise ValueError("Fleet conservation failed")
+            audit = snapshot_audit[snapshot_index]
+            snapshot_index += 1
+            if audit["timestamp"] != timestamp or audit["docked"] != sum(counts):
+                raise ValueError("Snapshot audit disagrees with CSV inventory")
+            if audit["docked"] + audit["in_transit"] != FLEET or audit["in_transit"] < 0:
+                raise ValueError("Docked plus in-transit fleet conservation failed")
 
 
 def csv_bytes(rows):
@@ -209,9 +359,14 @@ def json_bytes(value):
     return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
 
 
+def jsonl_bytes(events):
+    return "".join(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n" for event in events).encode("utf-8")
+
+
 def configuration_guard(output, selected, configuration):
-    """Never mix separately generated scenarios from different settings/seeds."""
-    siblings = [name for name in SCENARIOS if name not in selected and (output / (name + ".csv")).exists()]
+    """Never mix separately generated CSV/event pairs from different models."""
+    siblings = [name for name in SCENARIOS if name not in selected and
+                ((output / (name + ".csv")).exists() or (output / (name + "_events.jsonl")).exists())]
     if not siblings:
         return
     path = output / "generation_metadata.json"
@@ -223,11 +378,14 @@ def configuration_guard(output, selected, configuration):
     if recorded != configuration:
         raise ValueError("Existing sibling CSVs have a different configuration; use a new --output-dir or regenerate --scenario all")
     for name in siblings:
-        filename = name + ".csv"
-        expected = metadata.get("expected_csvs", {}).get(filename, {}).get("sha256")
-        actual = hashlib.sha256((output / filename).read_bytes()).hexdigest()
-        if actual != expected:
-            raise ValueError("Existing sibling CSV does not match its recorded hash; use a new --output-dir or regenerate --scenario all")
+        for suffix, section in ((".csv", "expected_csvs"), ("_events.jsonl", "expected_event_logs")):
+            filename = name + suffix
+            if not (output / filename).exists():
+                raise ValueError("Existing sibling dataset is missing its CSV or event log; regenerate --scenario all")
+            expected = metadata.get(section, {}).get(filename, {}).get("sha256")
+            actual = hashlib.sha256((output / filename).read_bytes()).hexdigest()
+            if actual != expected:
+                raise ValueError("Existing sibling file does not match its recorded hash; use a new --output-dir or regenerate --scenario all")
 
 
 def generate(output, scenario="all", seed=5300, start=date(2026, 8, 24)):
@@ -254,17 +412,28 @@ def generate(output, scenario="all", seed=5300, start=date(2026, 8, 24)):
     payloads = {}
     all_rows = {}
     transfer_audits = {}
+    event_logs = {}
+    snapshot_audits = {}
     for name in SCENARIOS:
-        all_rows[name], transfer_audits[name] = generate_rows(name, seed, days, stations, zone)
-        validate_rows(all_rows[name], days, stations, zone)
+        all_rows[name], transfer_audits[name], event_logs[name], snapshot_audits[name] = generate_rows(name, seed, days, stations, zone)
+        validate_rows(all_rows[name], days, stations, zone, snapshot_audits[name])
         payloads[name + ".csv"] = csv_bytes(all_rows[name])
+        payloads[name + "_events.jsonl"] = jsonl_bytes(event_logs[name])
     baseline_rows = BASELINE_DAYS * len(HOURS) * len(stations)
     if all_rows["normal"][:baseline_rows] != all_rows["disruption"][:baseline_rows]:
         raise ValueError("Normal/disruption baselines differ")
+    monitoring_start = utc(datetime.combine(days[BASELINE_DAYS], time(HOURS[0]), tzinfo=zone))
+    histories = {
+        name: [event for event in event_logs[name] if utc(datetime.fromisoformat(event["timestamp"])) < monitoring_start]
+        for name in ("normal", "disruption")
+    }
+    if histories["normal"] != histories["disruption"]:
+        raise ValueError("Normal/disruption pre-monitoring event histories differ")
     for name in SCENARIOS:
-        path = output / (name + ".csv")
-        if name not in selected and path.exists() and path.read_bytes() != payloads[name + ".csv"]:
-            raise ValueError("Existing sibling CSV differs from the current generator output; use a new --output-dir or regenerate --scenario all")
+        for suffix in (".csv", "_events.jsonl"):
+            path = output / (name + suffix)
+            if name not in selected and path.exists() and path.read_bytes() != payloads[name + suffix]:
+                raise ValueError("Existing sibling file differs from the current generator output; use a new --output-dir or regenerate --scenario all")
     fixture_day = days[BASELINE_DAYS].isoformat()
     metadata = {
         "synthetic": True, "configuration": configuration,
@@ -279,29 +448,42 @@ def generate(output, scenario="all", seed=5300, start=date(2026, 8, 24)):
         "model": {
             "capacity_per_station": 30, "total_bikes": 300, "total_positions": 600,
             "initial_allocation": "15 bikes at every station only at 07:00 on the first service date; no daily reset or operator redistribution",
-            "cross_date_continuity": "Each station's next planned date 07:00 inventory equals its previous planned date 21:00 inventory, including Friday-to-Monday",
-            "outside_observation_window": "No movements are modeled outside 07:00-21:00 or on unlisted weekend days; inventory is held unchanged",
-            "transfer": "Instantaneous single-bike movement, no in-transit inventory or travel times",
-            "distance_pair_weight": "1 / (1 + straight-line distance in km), at most 1; not road distance, slope or travel time",
-            "background_attempts": "10 at 08/09/10/17/18/19; 6 at other hours after 07; symmetric distance-weighted station pairs",
-            "normal_morning_at_08_09_10": "16 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
-            "disruption_monitoring_morning_at_08_09_10": "48 + uniform integer 0..6 synthetic transfer attempts each hour, residential to academic",
-            "midday_at_11_12_13_14": "6 + uniform integer 0..4 attempts each hour among academic/mixed/transport stations",
-            "afternoon_at_15_16_17": "6 + uniform integer 0..4 attempts each hour, academic to residential",
-            "evening_at_18_19_20_21": "9 + uniform integer 0..4 attempts each hour, academic/mixed/transport to residential, including library return",
-            "capacity_handling": "Transfers require a bike at the source and a free position at the destination",
-            "edge_adjustments": "Artificial software fixtures during daytime hours only, not operator dispatch or a claimed natural commuting process",
+            "initial_bike_ids": "B001-B015 at S01, B016-B030 at S02, continuing in blocks of 15 through B286-B300 at S20",
+            "cross_date_continuity": "Individual bikes persist and rides continue across nights, weekends and service-date boundaries",
+            "outside_observation_window": "Night/weekend rides are simulated continuously; CSV observations remain weekdays07:00-21:00",
+            "transfer": "A departure removes one unique bike from its station into transit; only its later arrival returns it to a dock",
+            "duration_seconds": "max(300, ceil(straight-line_km * 1.3 / 12km_per_hour * 3600 + uniform_integer(180,480))); explicit synthetic detour/speed/dwell assumptions, no real routes or hills",
+            "distance_pair_weight": "1 / (1 + straight-line distance in km), at most 1",
+            "weekday_07_to_10": "Each interval: 16..22 residential-to-academic plans plus10background; disruption monitoring uses48..54directed instead",
+            "weekday_10_to_14": "Each interval: 6..10academic/mixed/transport exchange plans plus6background",
+            "weekday_14_to_17": "Each interval: 6..10academic-to-residential plans plus6background",
+            "weekday_17_to_21": "Each interval: 9..13academic/mixed/transport-to-residential plans plus10background",
+            "weekday_21_to_24": "Each interval: 2..5return plans plus2background",
+            "every_day_00_to_06": "Each interval: 0..2background plans",
+            "weekday_06_to_07": "4..8residential-to-academic plans plus2background",
+            "weekend_06_to_10_and_21_to_24": "Each interval: 1..3background plans",
+            "weekend_10_to_21": "Each interval: 2..5outings(to17:00) or returns(after17:00) plus4background; no class surge",
+            "departure_timing": "Uniform integer seconds1..3599 within each absolute UTC hour; local time selects the flow profile",
+            "capacity_handling": "Empty sources skip synthetic plans; full destinations at arrival reroute to the nearest currently free permissible station with an additional positive ride duration, rechecked on arrival",
+            "event_ties": "Arrivals and reroutes before departures; snapshot after all events at its timestamp",
+            "edge_fixtures": "S20 excluded from every baseline route and reroute; first monitoring day00:00-12:00 random departures paused, prior rides must settle, then explicit positive-duration rider schedules target09/10/11fixtures; no queue clearing, teleportation or operator dispatch",
             "sensors": "All automatic readings accurate, complete and on the scheduled hour",
         },
         "transfer_audit": transfer_audits,
-        "transfer_audit_scope": "Synthetic planned/successful movements aggregated by scenario and phase; excludes the initial allocation and artificial edge-fixture adjustments; never customer attempts or observed trips",
+        "transfer_audit_scope": "Synthetic plans and actual departures/successful_transfers, arrivals and reroutes by departure phase/flow; edge rider schedules explicitly included; no true customer attempts or observed trips. Arrivals after the final export time remain pending.",
+        "snapshot_audit": snapshot_audits,
         "expected_csvs": {
             name: {"rows": len(days) * len(HOURS) * len(stations), "baseline_rows": baseline_rows,
                    "monitoring_rows": (len(days) - BASELINE_DAYS) * len(HOURS) * len(stations),
                    "complete_snapshots": len(days) * len(HOURS), "coverage": 1.0,
                    "sha256": hashlib.sha256(payload).hexdigest()}
-            for name, payload in payloads.items()
+            for name, payload in payloads.items() if name.endswith(".csv")
         },
+        "expected_event_logs": {
+            name + "_events.jsonl": {"events": len(events), "sha256": hashlib.sha256(payloads[name + "_events.jsonl"]).hexdigest()}
+            for name, events in event_logs.items()
+        },
+        "final_in_transit": {name: audit[-1]["in_transit"] for name, audit in snapshot_audits.items()},
         "edge_fixtures": [
             {"case": "constant later-hour baseline", "station_id": "S20", "dates": settings["baseline_dates"], "hours": HOURS, "bikes": 15},
             {"case": "balanced network", "date": fixture_day, "hour": 9, "bikes_by_station_order": [15] * 20},
@@ -312,7 +494,9 @@ def generate(output, scenario="all", seed=5300, start=date(2026, 8, 24)):
         "limitations": [
             "No missing readings, sensor failures, closures or unusable bikes/docks in any scenario.",
             "Inventory persists across service dates; same-hour sequences may have serial dependence, drift or boundary concentration and require independent suitability review.",
-            "No operator dispatch, nightly rebalancing, overnight trips or weekend trips are simulated.",
+            "No operator dispatch or nightly rebalancing is simulated; night/weekend trips and travel times are hypothetical.",
+            "Docked bikes alone need not total300 or imply50%network dock occupancy; docked plus in-transit always equals300.",
+            "Rides pending at the final21:00 observation are censored, not forced to finish; their latest arrival_due is retained in the event logs.",
             "Normal means regular simulation, not guaranteed absence of inventory warnings or statistical signals.",
             "Disruption is an operational redistribution, not equipment failure; detection must be evaluated independently.",
             "No SPC implementation or baseline suitability approval is supplied by this generator.",
@@ -322,6 +506,7 @@ def generate(output, scenario="all", seed=5300, start=date(2026, 8, 24)):
     # All validation completes before writes; writing is confined to named outputs.
     for name in selected:
         (output / (name + ".csv")).write_bytes(payloads[name + ".csv"])
+        (output / (name + "_events.jsonl")).write_bytes(payloads[name + "_events.jsonl"])
     for filename, value in (("stations.json", stations), ("settings.json", settings), ("generation_metadata.json", metadata)):
         (output / filename).write_bytes(json_bytes(value))
     return selected
@@ -339,7 +524,7 @@ def main(argv=None):
     except (ValueError, OSError) as error:
         parser.error(str(error))
     for name in selected:
-        print("%s: %s rows, %s complete snapshots, %s bikes per snapshot" %
+        print("%s: %s rows, %s complete snapshots, docked + in-transit = %s bikes" %
               (name + ".csv", SERVICE_DAYS * len(HOURS) * 20, SERVICE_DAYS * len(HOURS), FLEET))
     print("Shared files: stations.json, settings.json, generation_metadata.json")
     print("Output: %s" % args.output_dir.resolve())
