@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dockwatch"
+version = "0.2.0"
+description = "Bikeshare inventory analysis for a React dashboard and Python API"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "MIT"
+dependencies = ["pandas>=2.3,<3", "numpy>=2.2,<3"]
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.34,<1",
+  "python-multipart>=0.0.20,<1",
+  "plotnine>=0.15,<0.16",
+  "matplotlib>=3.10,<4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<9", "httpx>=0.28,<1", "rsconnect-python>=1.27,<2", "pyyaml>=6,<7"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app/dockwatch"]

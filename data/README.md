@@ -1,228 +1,160 @@
-# DockWatch synthetic data and generator
+# DockWatch data: v5 scenarios in the current dashboard
 
-These files describe a **fictional** Ithaca-area bikeshare system. Every station
-automatically records an accurate inventory at every scheduled hour. All stations
-are open; every bike and dock is usable. There are **no missing readings, sensor
-failures, manual counts, real customer records or measured local demand** in these
-three datasets. Station locations are anchored to real Ithaca/Cornell landmarks,
-but the bikeshare stations and every inventory record are simulated.
+These are deliberately designed teaching and software-test fixtures for a fictional
+Ithaca-area bikeshare network. The two sources are `normal.csv` and `disruption.csv`.
+Neither is real telemetry, a calibrated demand model, or evidence of process stability.
+The former `edge_cases.csv` is no longer a source; disruption includes inventory
+boundary examples, and software tests cover missing, invalid and degenerate inputs.
 
-## Run the generator
+Each CSV has **12,000 observations**: 20 stations × 40 scheduled weekdays × 15 hours,
+07:00–21:00 America/New_York. Default dates are **August 24–October 16, 2026**.
+Every station has 30 usable docks. All fixture readings are accurate and complete.
+Listed weekdays, including holidays, are assumed comparable within this simulation;
+this is not a real Cornell operating calendar.
 
-Requires Python 3.9 or newer and the system's IANA timezone database; no third-party
-Python packages are used. Keep the bundled `station_anchors.json` beside the script:
-it is read offline, with no web request during generation. Run from the personal repository root:
+## Current dashboard and preserved generation checks
 
-```sh
-python3 data/generate_data.py
-```
+The incoming data release includes a preserved statistical implementation and its
+original reports. They describe a different workflow from the current dashboard:
 
-This generates all three CSVs in `data/`. To generate a single CSV:
-
-```sh
-python3 data/generate_data.py --scenario normal
-python3 data/generate_data.py --scenario disruption
-python3 data/generate_data.py --scenario edge_cases
-```
-
-Each invocation also writes the common `stations.json`, `settings.json` and
-`generation_metadata.json`. Single-file runs and the all-files run produce
-identical bytes for the same configuration, regardless of invocation order.
-Metadata lists **expected** hashes for all scenarios, even if only one CSV has
-been written. All outputs are UTF-8, with CSV columns in the order shown below.
-
-Options:
-
-| Option | Default | Meaning |
+| | Published v5 generation checks | Current React History |
 |---|---|---|
-| `--scenario` | `all` | `all`, `normal`, `disruption` or `edge_cases` |
-| `--seed` | `5300` | Integer seed controlling repeatable random transfers |
-| `--start-date` | `2026-08-24` | First synthetic service date, a weekday in `YYYY-MM-DD` format |
-| `--output-dir` | Script's directory | Destination for generated CSV/JSON files; independent of the working directory |
+| Limits | First 25 reference dates, frozen for the final 15 dates | Estimated from the selected station/hour and date range |
+| Rules | Point beyond limits, eight on one side, six-point trend | All eight course-image tests when Diagnosis is enabled |
+| Clock | Historical detector evaluates elapsed monitoring windows | History reads all collection dates independently of playback |
+| Review | Historical reference-review states | No reference approval or frozen monitoring workflow |
+| Diagnosis range | Reference and monitoring periods | All 40 dates selected and locked until Diagnosis is disabled |
 
-For a separate experiment:
+`README.v5.md`, `demo_guide.md`, `validation.json` and detector labels in
+`generation_metadata.json` are preserved publication artifacts. References there
+to `app/qc.py`, Analysis, baseline collection, manual review and three-rule
+zero-candidate results describe the historical detector. They are not instructions
+for the current UI or claims about its eight-rule results. The generator prefers
+`app/qc.py` if present; this checkout instead uses `data/_qc_snapshot.py`, since
+current statistics live in `app/dockwatch/`. Its SHA256 is verified before loading:
 
-```sh
-python3 data/generate_data.py --seed 123 --output-dir data/experiment_123
+```text
+e5e1b4824b41450ed10963f91ab27061ee774afe1682abd29841bbcec47b6384
 ```
 
-The command overwrites the named generated outputs in its destination. A single-
-scenario run refuses to mix a new seed/calendar or changed generator output with
-incompatible sibling CSVs. Use a new output directory or regenerate `--scenario all`
-to replace the complete set. It also rejects sibling files whose bytes no longer
-match their recorded hashes. It does not modify the application or Git remotes.
+For example, current History on **normal, S01, 07:00, all dates** detects T3:
+four contributing points in one matching window. That does not contradict the
+published zero-candidate result under different rules and limit periods. Use
+[the current walkthrough](../demo/README.md) for verified UI checkpoints.
+The dashboard detector never reads intended disruptions, event logs or generator
+parameters as evidence that an observation matches a rule.
 
-## Three scenarios
+## Scenarios and CSV codebook
 
-| File | Content | Purpose |
+| File | Construction | Current operational interpretation |
 |---|---|---|
-| `normal.csv` | A repeatable student-oriented day: morning class arrivals, midday campus/hub exchange, partial afternoon return and stronger evening return, plus modest random movements | Regular-operation demonstration; not a promise of zero inventory warnings or zero statistical signals |
-| `disruption.csv` | Exactly the same first 25 days as `normal.csv`; stronger residential-to-academic morning transfers during the next 15 days | Operationally abnormal redistribution, potentially empty residential and crowded academic stations; no sensor/equipment fault |
-| `edge_cases.csv` | Complete valid readings with controlled empty/full counts, exact/near inventory thresholds, a constant later-hour baseline, and balanced versus polarized networks | Verify boundary behavior without invalid or missing data |
+| `normal.csv` | Designed diurnal inventory with bounded seeded variation; every count is 6–24 inclusive | No strict inventory warning; exploratory History patterns remain possible |
+| `disruption.csv` | Same first 25 dates, then disclosed rider-event windows | Empty/full, low/high, exact 6/24 boundaries and cross-date patterns |
 
-Each file has **12,000 data rows**, plus one header: 20 stations × 15 hours × 40
-service dates. The first 25 dates contribute 7,500 baseline rows; the last 15
-contribute 4,500 monitoring rows. There are 600 complete snapshots per file, each
-with 300 bikes and 600 dock positions. Coverage is 100% against the supplied plan.
-
-Default dates are the 40 weekdays from **2026-08-24 through 2026-10-16**. Baseline:
-Aug 24–Sep 25; monitoring: Sep 28–Oct 16. All listed weekdays, including holidays,
-are assumed comparable **within this fictional simulation**. This is not an
-assertion about real Cornell schedules or holiday travel. `--start-date` generates
-a new explicit 40-weekday plan and preserves local-time daylight-saving offsets.
-
-## CSV codebook
+August 24–September 25 observations are identical between sources; September
+28–October 16 supplies the contrast. These construction labels do not configure
+current History limits. Candidate profiles were deliberately selected using the
+frozen generator checks. Finite acceptance does not establish independence,
+normality, process capability or a calibrated false-alarm rate.
 
 | Column | Type / unit | Meaning |
 |---|---|---|
-| `timestamp` | ISO 8601 datetime with UTC offset | Exact scheduled local observation time in `America/New_York`, e.g. `2026-08-24T07:00:00-04:00` |
-| `station_id` | String identifier | `S01`–`S20`, matching `stations.json` |
-| `bikes` | Integer, bikes | Available usable bikes at that station; 0–30 inclusive |
+| `timestamp` | ISO 8601 datetime with UTC offset | Exact planned local observation, e.g. `2026-09-28T09:00:00-04:00` |
+| `station_id` | String | `S01`–`S20`, matching `stations.json` |
+| `bikes` | Integer, bikes | Usable bikes docked at that station at the instant; 0–30 inclusive |
 
-Rows are ordered by timestamp then station identifier, with one row per station
-and hour. Hours are 07:00–21:00 inclusive. Free docks can be derived as
-`capacity - bikes`; occupancy is `bikes / capacity`. Zero bikes is a valid measured
-empty station, not a missing reading. No customer attempts, separate pickups and
-returns, exact downtime or in-transit bikes are recorded or inferable from these
-hourly snapshots alone.
+Rows are time/station ordered, with one per planned key. Zero is a valid empty
+reading; a missing upload reading is an absent row, not an inferred zero. Free
+docks are `capacity - bikes`; occupancy is `bikes / capacity`. Inventory changes
+do not identify separate departures and arrivals. CSVs do not measure customer
+attempts, trip demand, exact outage duration or intervention effects.
 
-## Companion files
+## Positive-duration rides and continuous accounting
 
-`stations.json` is an array of 20 station records, identical across scenarios:
+The closed fleet has **300 bikes across docked and in-transit states** and 600
+dock positions. Each bike starts docked at the first 07:00 only: 15 per station.
+Departure removes an identified bike; strictly positive riding time keeps it in
+transit; arrival adds it only when a dock is available. Full destinations require
+positive-time rerouting. Docked plus in-transit equals 300 throughout the event
+model. The CSV's docked total alone usually does not equal 300.
 
-| Field | Type / unit | Meaning |
-|---|---|---|
-| `station_id` | String | Unique key used in every CSV |
-| `name` | String | Simulated station label referring to a real nearby landmark |
-| `area` | String | Geographic grouping, with a higher station density around Cornell |
-| `type` | String | `residential`, `academic`, `mixed`, `transport` or `recreation`; hypothetical trip context, not measured demand |
-| `latitude` | Decimal degrees, WGS84 | Landmark anchor's north/south location; not a surveyed docking footprint |
-| `longitude` | Decimal degrees, WGS84 | Landmark anchor's east/west location; not a surveyed docking footprint |
-| `capacity` | Integer, positions | Fixed at 30 for every station |
+State persists through nights and weekends. Sparse overnight riders evolve from
+the prior inventory; there is no daily reset, operator redistribution or execution
+of dashboard recommendations. Final pending rides remain in transit. Ten two-station
+rider corridors, seeded variation and deliberately timed late rides simplify the
+model. These are disclosed teaching assumptions, not measured passenger behavior,
+road routing or optimized dispatch.
 
-Twenty simulated stations use real geographic anchors, with at least 12 around
-Cornell housing, teaching buildings and libraries. Source URLs and coordinate
-provenance are separate from `stations.json` to preserve the product schema.
-The team geographic screenshot has not been provided. Label the future map
-**“Ithaca — simulated bikeshare network.”** Coordinates identify landmark areas,
-not approved or existing bikeshare docking locations.
+Only for a complete simultaneous snapshot of this closed, fault-free fleet does
+`300 - sum(bikes)` equal in-transit inventory. Normal on September 28 at 09:00 has
+291 docked and 9 in transit; disruption has 296 docked and 4 in transit. Partial
+uploads cannot support this inference. The dashboard reports docked observations
+and does not display an inferred trip count. Optional fleet validation only
+checks that observed docked totals do not exceed 300; independent event replay
+verifies conservation.
 
-`station_anchors.json` is the bundled generator input. It contains the seven station
-fields above plus `source_url` (official Cornell venue or TCAT GTFS source) and
-`coordinate_note` (how the location was obtained and its limits). The coordinates
-were retrieved on 2026-10-16; the TCAT feed version is 20260922. Sources are also
-copied into `generation_metadata.json` under `station_sources` for audit. Twelve
-anchors are in Cornell core: five housing/community sites, six academic/library
-sites and one student-union hub. Eight cover Collegetown, Downtown Ithaca,
-East Ithaca, Cayuga Heights, South Hill and Stewart Park. Area/type labels are
-simulation classifications. The Baker Tower anchor was checked against the official
-Cornell Facilities building footprint; a valid landmark anchor still does not
-establish the feasibility or permission for a physical docking site.
+## Companion files and event codebook
 
-`settings.json` supplies product inputs independently of observed rows:
+- `stations.json`: `station_id`, `name`, `area`, `type`, WGS84 `latitude`/`longitude`
+  in decimal degrees and `capacity` in docks. IDs, coordinates and capacities match
+  across scenarios. Area/type are descriptive, not statistical subgroups.
+- `station_anchors.json`: offline landmark sources with `source_url` and
+  `coordinate_note`. Twelve anchors are in Cornell core and eight in surrounding
+  Ithaca. These are real places, not existing or approved bikeshare facilities.
+- `settings.json`: schema version, IANA timezone, ordered `service_dates`,
+  construction-only `baseline_dates`/`monitoring_dates`, local integer `hours`
+  7–21, `station_ids` and collection mode. Coverage uses this independent plan.
+- `generation_metadata.json`: seed/version, construction assumptions, station
+  provenance, expected hashes, per-snapshot docked/in-transit counts and audits.
+- `normal_events.jsonl`, `disruption_events.jsonl`: chronological synthetic event
+  ledgers for audit, not extra scenario CSVs or required chart inputs.
+- `validation.json`, `demo_guide.md`, `README.v5.md`, `_qc_snapshot.py`: preserved
+  generation-time checks, examples, template and detector, scoped above.
+- `generate_data.py`, `test_generate_data.py`: generator and independent checks,
+  including physical replay, historical detector checks and reproducibility.
 
-- `schema_version`: integer schema version (1).
-- `timezone`: IANA timezone name, `America/New_York`.
-- `service_dates`: ordered planned local dates (`YYYY-MM-DD`).
-- `baseline_dates`, `monitoring_dates`: locked disjoint date lists, 25 and 15 dates.
-- `hours`: scheduled local clock hours, integers 7–21.
-- `station_ids`: complete planned station list.
-- `collection_mode`: `automatic_complete_hourly_snapshots`.
-
-Do not infer the planned calendar or baseline from whatever rows happen to be
-uploaded. `generation_metadata.json` is **generation/audit information only**:
-version, seed, provenance, assumptions, transfer parameters and generation-only
-planned/successful transfer totals, expected row counts
-and SHA-256 hashes, planted fixture locations and limitations. The application’s
-detector must not read the planted scenarios or transfer parameters to decide
-whether a point signals. `generate_data.py` is the reproducible generator;
-`test_generate_data.py` contains its standalone acceptance checks.
-
-## Model and edge fixtures
-
-Only the **first service date** begins at 07:00 with 15 bikes per station. Inventory
-then continues across all 40 dates: each station's next planned date at 07:00
-equals its previous planned date at 21:00, including Friday-to-Monday. There is
-**no nightly reset or operator redistribution**. The simulator assumes no activity
-outside 07:00–21:00 or on unlisted weekend days; bikes remain where the previous
-snapshot left them. This is an explicit time-window simplification, not a claim
-that real bikes are never used at night or on weekends. Transfers move one bike
-instantaneously between stations while
-respecting 0–30 inventory bounds; they never create or remove a bike. All counts
-below describe **synthetic transfer attempts**, not observed trips or customer
-attempts. An attempted transfer is skipped if its source is empty or destination
-is full; successful movements are reported separately in generation metadata.
-
-| Hour ending at the snapshot | Normal model assumptions |
+| Event field | Meaning |
 |---|---|
-| 08:00–10:00 | 16–22 directed attempts per hour, residential to academic anchors, representing arrivals for class |
-| 11:00–14:00 | 6–10 attempts per hour among academic/mixed/transport hubs, representing class changes, lunch and campus circulation |
-| 15:00–17:00 | 6–10 attempts per hour, academic to residential, representing partial afternoon return |
-| 18:00–21:00 | 9–13 attempts per hour, academic/mixed/transport to residential, including hypothetical evening library return |
+| `event` | `departure`, `arrival` or `reroute` |
+| `timestamp` | Offset-aware physical event time |
+| `bike_id`, `trip_id` | Synthetic identities linking departure and later arrival |
+| `station_id` | Origin, arrival station or full destination being rerouted |
+| `destination_id`, `arrival_due` | Next destination and future arrival time |
+| `flow` | Disclosed synthetic rider-schedule category on a departure |
 
-Background circulation adds 10 symmetric pair attempts at hours 08, 09, 10, 17,
-18 and 19, and 6 at other hours after 07. Pair weights are
-`1 / (1 + straight-line distance in km)`, bounded by 1: closer anchors are more
-likely to exchange bikes. This is not road distance, a routing model, elevation
-adjustment or a travel-time estimate. Campus density and directional time windows
-shape the daily pattern without claiming measured student travel behavior.
+B001–B015 begin at S01, continuing in groups of 15 through B286–B300 at S20.
+Snapshots follow due arrivals and departures. Published CSVs and ledgers remain
+unchanged in this integration.
 
-Only the disruption monitoring morning intensity is changed to 48–54 directed
-attempts per hour at 08:00, 09:00 and 10:00. Later inventory follows from those
-movements under the same afternoon/evening rules. There are no travel times or
-in-transit inventories. Every parameter is a disclosed synthetic design choice,
-not an estimate from Cornell schedules, sensor logs or Ithaca demand data.
+## Regeneration and verification
 
-Context sources accessed 2026-10-16: Cornell's [class meeting pattern](https://catalog.cornell.edu/enrollment-credit-requirements/class-meetings/)
-supports using morning/afternoon class windows as a scenario design cue, and
-[Ithaca neighborhoods](https://scl.cornell.edu/sub/residential-life/housing/campus-housing/housing-search-process/ithaca-neighborhoods)
-describes student-housing areas and local terrain. Neither source measures bike
-trip rates. Hills, road access, class attendance, travel time and actual demand
-are not modeled; station types and transfer intensities remain assumptions.
-
-Random streams are seeded separately by service-date index for reproducibility;
-that does **not** make the inventory observations independent. Inventories carry
-across dates, so serial dependence, drift and boundary concentration may arise.
-Normal and disruption share the entire baseline history exactly. H-03 must
-compare the **same station and clock hour across dates**, then review baseline
-suitability. This generator does not approve I-chart assumptions, calculate limits,
-or guarantee detection. No rate has been retuned to manufacture a suitable chart.
-The dashboard can later inform human operators; this generator does not implement
-or assume their rebalancing decisions.
-
-Additional fixtures in `edge_cases.csv`:
-
-| Planned time, default calendar | Values | Intended later software check |
-|---|---|---|
-| Every baseline date/hour, including 12:00 | `S20 = 15` | Constant later-hour baseline must remain unsupported for calibrated statistical alarms |
-| Sep 28, 09:00 | All 20 stations have 15 bikes | Balanced inventory: full fleet still 300 |
-| Sep 28, 10:00 | `S01`–`S10 = 0`; `S11`–`S20 = 30` | Polarized inventory: same 300 bikes and 50% network occupancy, but no station provides both pickup and return space |
-| Sep 28, 11:00 | `S01 = 6`, `S02 = 24`; `S03 = 5`, `S04 = 25`; `S05 = 0`, `S06 = 30`; remaining stations = 15 | Exact 20%/80% thresholds do not trigger strict low/high-stock rules; 5/25 do; valid empty/full observations |
-
-Fixtures use conserving transfers during daytime hours, but are deliberately
-artificial software examples, not operator dispatch or claims about natural
-commuting. They never change inventory between the last scheduled hour and the
-next service-date opening. With a different start date, the planted
-monitoring fixtures occur on its 26th planned service date; metadata records it.
-Insufficient history, malformed rows, duplicate keys and missing external uploads
-belong to later H-03 software tests, not to these simulated operating scenarios.
-
-## Validation and real collection
+The generator uses Python 3.9+ and the system IANA timezone database. Keep the
+complete data folder, including anchors, the README template and detector snapshot.
+Use a separate preview directory when checking reproducibility:
 
 ```sh
-python3 -m unittest discover -s data -p 'test_*.py' -v
+python3 data/generate_data.py --output-dir /tmp/dockwatch-data-preview
+python3 -m unittest discover -s data -p 'test_generate_data.py' -v
+uv run --frozen --extra api pytest tests data/test_generate_data.py -q
 ```
 
-Checks cover schema, date/hour completeness, unique keys, ordered timezone-aware
-timestamps, capacity bounds, fleet conservation, common baseline, fixtures,
-all 39 cross-date inventory transitions (including seven weekends), reproducibility,
-separate/all equivalence, mixed-configuration protection, and a
-calendar crossing the daylight-saving change. The generator checks its own core
-inventory invariants before writing. No product SPC implementation is included.
+Both scenarios are generated together. Options are `--seed` (5300), `--start-date`
+(`2026-08-24`, a weekday), `--output-dir` (this data directory) and the compatibility
+option `--scenario all`. There is no single-source or third-scenario mode.
+Existing generated outputs are archived in a timestamped `.dockwatch-data-backups`
+folder before replacement. Default regeneration also replaces this integrated
+README with the historical `README.v5.md` template; review documentation when
+adopting regenerated files. Restart the dashboard after replacing data because
+its backend caches observations and configuration.
 
-For real collection, station controllers would timestamp and export available-
-bike counts on the common hourly schedule. The operator would maintain IDs,
-coordinates and usable capacity, establish comparable service dates and baseline
-approval, and validate clock synchronization and data quality. Real networks may
-have bikes in transit, equipment faults, closures and missing messages; the current
-synthetic assumptions would require review before using the same model in service.
+Application tests separately check current eight-rule decisions, same-hour limits,
+missing/constant/single readings, validation and API behavior. The generation
+report alone does not validate current dashboard results. Operational thresholds
+are strictly below 6 or above 24; exactly 6/24 does not trigger. Popup quantities
+target 15 for human review and are not an arranged dispatch.
+
+For real collection, station controllers would export synchronized usable-bike
+counts; operators would maintain the plan and investigate faults, closures,
+missingness and capacity changes. Bounded counts, temporal dependence and deliberate
+fixture construction limit interpretation. Calibrated monitoring would require
+separate suitability validation.

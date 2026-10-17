@@ -1,0 +1,13 @@
+/* The halo sits outside the status dot; MapLibre retains its positioning transform. */
+.station-map .station-marker.linked-highlight {
+  z-index:4;
+  overflow:visible;
+  box-shadow:0 0 0 4px #fff,0 0 0 9px #bd491d,0 0 0 14px #f4ad4d66,0 2px 8px #18332f40;
+}
+
+@media (forced-colors:active) {
+  .station-map .station-marker.linked-highlight {
+    outline:6px solid Highlight;
+    outline-offset:5px;
+  }
+}

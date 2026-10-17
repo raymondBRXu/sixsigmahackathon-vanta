@@ -1,0 +1,275 @@
+.realtime-view {
+  min-width:0;
+}
+
+.realtime-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.realtime-heading h2 {
+  margin-bottom:0;
+}
+
+.realtime-playback-status {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  flex-shrink:0;
+  color:#60746a;
+  font-size:12px;
+}
+
+.realtime-playback-status i {
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#8a9b92;
+}
+
+.realtime-playback-status.playing i {
+  background:#258577;
+}
+
+.realtime-caption {
+  margin:10px 0 8px;
+  max-width:900px;
+}
+
+.realtime-request-status {
+  min-height:31px;
+  color:#6f817b;
+  font-size:11px;
+}
+
+.realtime-request-status p {
+  margin:0 0 12px;
+}
+
+.realtime-request-status [role=alert] {
+  color:#ad4548;
+}
+
+.realtime-grid-scroll {
+  max-width:100%;
+  overflow-x:auto;
+  padding-bottom:4px;
+}
+
+.realtime-station-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,336px);
+  justify-content:start;
+  gap:16px;
+  min-width:336px;
+}
+
+.realtime-station-card {
+  position:relative;
+  box-sizing:border-box;
+  width:336px;
+  min-width:336px;
+  height:275px;
+  padding:14px;
+  border:1px solid #dce5e0;
+  border-radius:9px;
+  background:#fff;
+  overflow:hidden;
+}
+
+.realtime-station-clickable {
+  cursor:zoom-in;
+}
+
+.realtime-station-clickable:hover,
+.realtime-station-clickable:focus-within {
+  border-color:#258577;
+  box-shadow:inset 0 0 0 1px #258577;
+}
+
+.realtime-station-heading {
+  padding-right:70px;
+}
+
+.realtime-history {
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:64px;
+  height:28px;
+  padding:0;
+  border:1px solid #dce5e0;
+  border-radius:5px;
+  color:#258577;
+  background:#f7faf8;
+  font-size:11px;
+  line-height:1;
+}
+
+.realtime-history:focus-visible,
+.realtime-chart:focus-visible {
+  outline:2px solid #258577;
+  outline-offset:2px;
+}
+
+.realtime-expand-hint {
+  margin:0 0 14px;
+}
+
+.realtime-focus-toolbar {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.realtime-station-expanded {
+  width:100%;
+  min-width:0;
+  max-width:960px;
+  height:auto;
+  padding:20px;
+}
+
+.realtime-station-expanded .realtime-station-heading {
+  height:auto;
+  margin-bottom:14px;
+}
+
+.realtime-station-expanded .realtime-station-heading h3 {
+  white-space:normal;
+  font-size:20px;
+  line-height:1.4;
+}
+
+.realtime-station-expanded .realtime-latest {
+  flex-wrap:wrap;
+  height:auto;
+  min-height:30px;
+}
+
+.realtime-station-expanded .realtime-chart {
+  width:100%;
+  min-width:0;
+  height:auto;
+  aspect-ratio:306 / 171;
+}
+
+.realtime-station-heading {
+  height:42px;
+  overflow:hidden;
+}
+
+.realtime-station-id {
+  display:block;
+  color:#6f817b;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1px;
+  line-height:15px;
+}
+
+.realtime-station-heading h3 {
+  margin:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  line-height:20px;
+  letter-spacing:-.15px;
+}
+
+.realtime-latest {
+  display:flex;
+  align-items:start;
+  justify-content:space-between;
+  gap:8px;
+  height:30px;
+  white-space:nowrap;
+  line-height:18px;
+}
+
+.realtime-latest strong {
+  color:#244d40;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+
+.realtime-latest time {
+  color:#6f817b;
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+}
+
+.realtime-chart {
+  display:block;
+  flex:none;
+  width:306px;
+  min-width:306px;
+  max-width:none;
+  height:171px;
+  overflow:visible;
+  font-family:'DM Sans',Arial,sans-serif;
+  font-size:10px;
+}
+
+.realtime-axis line,
+.realtime-x-axis line {
+  stroke:#e1e8e3;
+  stroke-width:1;
+}
+
+.realtime-axis text,
+.realtime-x-axis text {
+  fill:#78877f;
+}
+
+.realtime-reference line {
+  stroke:#d6a45d;
+  stroke-width:1;
+  stroke-dasharray:4 3;
+}
+
+.realtime-reference text {
+  fill:#9c7132;
+  paint-order:stroke;
+  stroke:#fff;
+  stroke-width:3px;
+  stroke-linejoin:round;
+}
+
+.realtime-reference-center line {
+  stroke:#97b3a5;
+  stroke-dasharray:none;
+}
+
+.realtime-reference-center text {
+  fill:#668e7a;
+}
+
+.realtime-trace {
+  fill:none;
+  stroke:#258577;
+  stroke-width:1.7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.realtime-point {
+  fill:#258577;
+  stroke:#fff;
+  stroke-width:1.3;
+}
+
+.realtime-point.outside-reference {
+  fill:#ca6651;
+}
+
+.realtime-missing {
+  fill:#87958d;
+  font-size:12px;
+}

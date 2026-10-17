@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "locale": "C.UTF-8",
+  "metadata": {
+    "appmode": "python-fastapi",
+    "entrypoint": "api:app"
+  },
+  "python": {
+    "version": "3.12.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "26.2.1",
+      "package_file": "requirements.txt"
+    }
+  },
+  "environment": {
+    "python": {
+      "requires": "~=3.12.0"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "49c3642d3267f25b5ed680caac46a23a"
+    },
+    ".python-version": {
+      "checksum": "61939823fbcc7e8de3b61ab105331baf"
+    },
+    "api.py": {
+      "checksum": "0d7ea01fc30fcbe5ee49f0b8378d6368"
+    },
+    "data/disruption.csv": {
+      "checksum": "8ab7a68c49bff9833a374a97f21b8223"
+    },
+    "data/normal.csv": {
+      "checksum": "54d7e488246b5e5abb9e04dd4293ad81"
+    },
+    "data/settings.json": {
+      "checksum": "d8b54b6f63bb3f01d71bd9540b9c7662"
+    },
+    "data/stations.json": {
+      "checksum": "678d02b40bf29f2477c4c2ff65cce00b"
+    },
+    "dockwatch/__init__.py": {
+      "checksum": "495d1be673e1a31184457971148a8573"
+    },
+    "dockwatch/data.py": {
+      "checksum": "41fe69353c8a3d6cad9117f8bea3b80f"
+    },
+    "dockwatch/patterns.py": {
+      "checksum": "850ac9b27c6975a9b0b9643e753039ae"
+    },
+    "dockwatch/plots.py": {
+      "checksum": "aea97a972a3c06cdbd2cfcfeaed45477"
+    },
+    "dockwatch/qc.py": {
+      "checksum": "a491c2b53a907eb9fc5292fb771a73dd"
+    },
+    "frontend/dist/assets/index-BGcdE9-e.css": {
+      "checksum": "a0195b262ed71b381a9f721ab0f93072"
+    },
+    "frontend/dist/assets/index-BcBgA5VV.js": {
+      "checksum": "0d9c3858483e5057d5f958161104ab94"
+    },
+    "frontend/dist/assets/map-ipme06yU.js": {
+      "checksum": "093bb7f7186bb9b9c14f5b75a69c026a"
+    },
+    "frontend/dist/assets/maplibre-gl-worker-DxGNRm0a.mjs": {
+      "checksum": "a27b1c5a4644b64e920fc4b4bf5502c1"
+    },
+    "frontend/dist/index.html": {
+      "checksum": "e1a19e7e787bbc742ed14b3c90b41e34"
+    }
+  }
+}

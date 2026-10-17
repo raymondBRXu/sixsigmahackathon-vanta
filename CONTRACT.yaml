@@ -22,9 +22,149 @@
 # Delete the paths you do not use.
 
 spec: SPEC.md
-updated: ""
+updated: "2026-10-17"
 
 tasks:
+  - id: H-14
+    title: Fix local publishing compatibility with macOS Bash 3.2
+    points: "Protects reproducible local deployment"
+    status: done
+    owner: "Codex"
+    started_at: "2026-10-17"
+    owns: [".github/scripts/connect-publish-async.sh", "CONTRACT.yaml"]
+    notes: >
+      User explicitly requested repairing the identified mapfile compatibility
+      issue first. Use Bash 3.2-compatible manifest file collection and verify
+      locally with simulated API responses; actual remote deployment is separate.
+    definition_of_done: >
+      Bash syntax checks pass. The full publishing helper runs under macOS
+      /bin/bash with a local curl stub, creates the expected archive including
+      filenames with spaces and backslashes, and rejects empty or missing-file
+      manifests. Existing deployment tests and git diff --check pass.
+    result: "Locally verified on Bash 3.2.57: 5 simulated publishing checks pass, including reproduction of the original failure, create/update archive integrity, and empty/missing-file rejection. All 8 deployment tests and 17 bundle checksums pass; Bash syntax and git diff --check pass. No remote deployment or Git commit performed."
+
+  - id: H-13
+    title: Integrate the updated data branch with the React dashboard
+    points: "Working datasets, reproducibility and validated dashboard behavior"
+    status: done
+    owner: "Codex with disjoint backend, frontend and documentation subtasks"
+    started_at: "2026-10-17"
+    owns: ["data/", "app/", "tests/", "scripts/", "README.md", "SPEC.md", "docs/", "demo/", "CONTRACT.yaml", ".gitignore"]
+    notes: >
+      User explicitly authorized a local snapshot followed by integration of
+      origin/chi/data into ray/dashboard-react, with no push. The snapshot is
+      33ae75d. Adopt the two v5 scenarios and positive-duration ride model;
+      preserve current History calculations and all eight diagnosis rules.
+      Update fleet validation, scenario choices, packaging and dataset-specific
+      checks without altering the published CSV/event data.
+    definition_of_done: >
+      Python application and generator tests, frontend tests and build pass;
+      both scenarios load through the API and browser, local bundle preparation
+      succeeds, git diff --check passes, and the merge is committed locally only.
+    result: "Integrated origin/chi/data at 1b0aa7f after snapshot 33ae75d, with local-only merge authorized. 216 application tests, 24 generator tests and 89 frontend tests pass; production build, 17 bundle checksums, isolated bundle API checks and browser checks for both scenarios, alerts, eight-point updates and full-range diagnosis pass. Published data artifacts are unchanged; current eight-rule calculations are preserved."
+
+  - id: H-12
+    title: Link inventory alerts and place playback controls in the sidebar
+    points: "Dashboard usability and clear current inventory actions"
+    status: done
+    owner: "Codex with disjoint map, realtime navigation and integration subtasks"
+    started_at: "2026-10-17"
+    owns: ["app/frontend/", "SPEC.md", "README.md", "docs/plan.md", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested after the saved 10a2dcf dashboard snapshot.
+      Remove the Action queue Move column. Replace the map heading with one
+      horizontal row of red, dismissible empty/full alerts. Opening an alert
+      shows its station's enlarged realtime chart without stopping playback.
+      Link queue rows, alert prompts and map markers on hover and keyboard focus.
+      A closed alert stays hidden during its current continuous condition;
+      recovery clears it and a later new empty/full condition can alert again.
+      Follow-up request moves the shared Play/Pause, previous/next Step and
+      simulation timeline into the sidebar, preserving playback and History
+      behavior in both dashboard views and keeping narrow layouts usable.
+    definition_of_done: >
+      npm test and npm run build in app/frontend pass; browser checks cover
+      alert resolution/dismissal, realtime navigation and playback, linked
+      highlights, sidebar playback placement and narrow layouts; git diff --check passes.
+    result: "Implemented and verified; local snapshot commit authorized by the user. Alert linkage passed 89 frontend tests. Sidebar relocation passed all 16 App integration tests, production build, playback/History/source-change browser checks and 1024px/390px/320px layouts; git diff --check passes."
+
+  - id: H-11
+    title: Add interactive station History diagnosis with eight pattern tests
+    points: "Preserves valid QC analysis and makes pattern evidence inspectable"
+    status: done
+    owner: "Codex with disjoint statistical, interaction and verification subtasks"
+    started_at: "2026-10-17"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/plan.md", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested after verifying the clean f8b1e48 snapshot.
+      Diagnosis defaults off. Enabling it selects and locks all service dates
+      until disabled. Test the selected station and operating hour against the
+      eight course-image rules using full-series estimated CL and sigma.
+      Keep the history chart interactive even with diagnosis off. Hover exposes
+      every observed point; detected-rule tabs select all contributing points
+      in red and show a short English explanation above the chart.
+    definition_of_done: >
+      uv run --locked --extra api pytest passes; npm test and npm run build
+      in app/frontend pass; browser verifies range locking/unlocking, hover,
+      issue switching, station/hour isolation and responsive layout;
+      git diff --check passes.
+    result: "Saved in 10a2dcf (react + test), verified clean on 2026-10-17. 216 Python tests and 60 frontend tests pass; production build, browser checks and independent review passed."
+
+  - id: H-10
+    title: Add station chart views for date analysis and realtime operations
+    points: "Preserves valid QC analysis and dashboard usability"
+    status: done
+    owner: "Codex with disjoint backend, frontend and review subtasks"
+    started_at: "2026-10-16"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/MVP.md", "docs/plan.md", "demo/", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested by the user after the React migration commit.
+      Keep station selection, add an operating-hour selector, and replace the
+      Individuals chart time range with an inclusive service-date range.
+      Use one observed count per selected hour per service date. Estimate
+      moving ranges between consecutive scheduled service dates, preserving
+      missing observations. Keep CL/UCL/LCL. The user further requested removing
+      the Analysis playback controls, loading the full dataset independently
+      of Operations time, and defaulting the retained date slider to its full range.
+      Further authorized a Realtime View by Station page within Operations:
+      20 fixed-size charts, fixed lines 15/24/6, and a rolling window of eight
+      scheduled hourly slots updated by the existing simulation playback.
+      Further authorized clicking each realtime chart to enlarge it into a
+      single-station view, with a return control and uninterrupted playback.
+      Latest authorization replaces the top Operations/Analysis tabs with
+      Overview / View by Station. Each station card's upper-right History button
+      opens the Individuals chart in a modal for that station, defaulting to
+      07:00 and all service dates. Chart-body enlargement remains available.
+    definition_of_done: >
+      uv run --locked --extra api pytest passes; npm test and npm run build
+      in app/frontend pass. Browser checks cover station/hour/date changes,
+      date-only axis, limits, full default range and independence from Operations
+      playback, realtime 20-chart rendering, fixed reference lines, eight-slot
+      rolling updates, rewind, missingness and fixed dimensions. The single-chart
+      enlargement, return, keyboard access and ongoing playback pass browser
+      checks. History modal checks cover correct station, default hour/full dates,
+      independent date analysis, close/Escape/focus, and no obsolete top tabs;
+      git diff --check passes.
+    result: "Saved in f8b1e48 (react v2), verified clean on 2026-10-17. Frontend has 44 passing tests and a successful build; backend previously passed 152 tests. Browser verified History dialogs, navigation, playback, enlargement and responsive layout."
+
+  - id: H-09
+    title: Rebuild the approved dashboard in React with Python API parity
+    points: "Preserves working tool, valid QC analysis, documentation and reproducibility"
+    status: done
+    owner: "Codex with disjoint frontend, backend and review subtasks"
+    started_at: "2026-10-16"
+    owns: ["app/", "tests/", "scripts/", "README.md", "SPEC.md", "docs/MVP.md", "docs/plan.md", "demo/", "data/README.md", "pyproject.toml", "uv.lock", "pytest.ini", ".python-version", ".node-version", ".gitignore", ".github/"]
+    notes: >
+      Explicitly authorized by the user on ray/dashboard-react. Preserve the
+      final Streamlit dashboard's content, data and interval-based analysis.
+      The archived source remains in stash. No baseline review or automated
+      SPC alarms. Keep statistics in Python; React renders the interaction.
+    definition_of_done: >
+      Locked Python tests and frontend tests/build pass. Browser verification
+      covers default normal values, double-click station selection, playback,
+      queue names, interval analysis, chart loading, CSV upload/download and
+      mobile layout. Verify a self-contained local deployment bundle.
+    result: "Implemented and locally verified: 104 Python tests, 22 frontend tests, browser parity checks, isolated wheel install, and 17 deployment checksums pass. Committed as b5a24a3; remote publication was not requested."
+
   - id: H-01
     title: Fill in every FILL IN line in SPEC.md
     points: "15 - Tool Design: scope matches a prompt (5), clear user and use case (5), minimal inputs (5)"

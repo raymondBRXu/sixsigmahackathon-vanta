@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Build and serve the React dashboard and Python API on one origin.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+uv sync --frozen --extra api
+npm ci --prefix app/frontend
+npm run build --prefix app/frontend
+exec uv run --frozen --extra api uvicorn app.api:app --host 127.0.0.1 --port "${PORT:-8000}"
