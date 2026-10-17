@@ -14,29 +14,6 @@ A React dashboard and Python API for a synthetic Ithaca bikeshare network. Inspe
 
 **20 fictional stations · 300 bikes docked or in transit · hourly snapshots · two synthetic scenarios.** No live telemetry or automated dispatch. The React dashboard retains its same-hour Individuals calculations and optional eight-rule diagnosis.
 
-## Run locally
-
-Prerequisites: Python 3.12, [uv](https://docs.astral.sh/uv/), Node.js 22+ within the frontend's engine range, and npm. The Python and JavaScript dependency versions are locked in `uv.lock` and `app/frontend/package-lock.json`.
-
-```bash
-./app/testme
-```
-
-Open **http://127.0.0.1:8000/**. The same process serves the React dashboard and API. API documentation is at **http://127.0.0.1:8000/api/docs**. Set `PORT=8001 ./app/testme` to use another port. The first run needs internet to install dependencies; street-map tiles also use the internet. Turn off **Street basemap** for a tile-free station view.
-
-For frontend development, start the API and Vite in separate terminals:
-
-```bash
-uv sync --frozen --extra api
-uv run --frozen --extra api uvicorn app.api:app --host 127.0.0.1 --port 8000
-```
-
-```bash
-npm ci --prefix app/frontend
-npm run dev --prefix app/frontend
-```
-
-Vite proxies `/api` and `/health` to port 8000. Production uses relative URLs, so both the page assets and API work beneath a Posit Connect content path.
 
 ## Dashboard workflow
 
