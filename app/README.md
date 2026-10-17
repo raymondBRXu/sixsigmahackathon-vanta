@@ -1,5 +1,12 @@
 # DockWatch React + FastAPI
 
+**[Open the public dashboard — no sign-in required](https://connect.systems-apps.com/content/ca01a272-5237-45e0-ac0c-4f3453f50c4c/)** ·
+[Public API documentation](https://connect.systems-apps.com/content/ca01a272-5237-45e0-ac0c-4f3453f50c4c/api/docs).
+Anonymous page and API access were checked on October 17, 2026.
+
+The [complete Documentation](../docs/DOCUMENTATION.md) includes setup, each user
+function, inputs, parameters, outputs, the data codebook and API/Python reference.
+
 From the repository root, `./app/testme` installs locked dependencies, builds the React client and serves it with the Python API at http://127.0.0.1:8000/. Interactive API documentation is at `/api/docs`.
 
 The frontend lives in `frontend/`, the HTTP adapter in `api.py`, and reusable data/statistics/plotting functions in `dockwatch/`. No statistical formula is duplicated in React.
