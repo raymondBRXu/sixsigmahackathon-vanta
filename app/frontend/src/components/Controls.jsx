@@ -1,7 +1,7 @@
-import { formatTime } from '../format.js'
+import { formatDate, formatTime } from '../format.js'
 
 export function Clock({ state, dispatch }) {
-  const { config, cursor, playing, view } = state
+  const { config, cursor, playing, historyStation } = state
   const time = (index) => formatTime(config.timestamps[index], config.timezone)
   return <section className="clock" aria-label="Simulation playback">
     <div className="clock-heading">
@@ -10,13 +10,12 @@ export function Clock({ state, dispatch }) {
     </div>
     <div className="playback-buttons">
       <button className="primary" onClick={() => dispatch({ type: 'togglePlayback' })}
-        disabled={view === 'Analysis' || (cursor === config.timestamps.length - 1 && !playing)}>
+        disabled={Boolean(historyStation) || (cursor === config.timestamps.length - 1 && !playing)}>
         <span aria-hidden="true">{playing ? 'Ⅱ' : '▶'}</span> {playing ? 'Pause' : 'Play'}
       </button>
       <button onClick={() => dispatch({ type: 'step', direction: -1 })} disabled={cursor === 0}>← Step</button>
       <button onClick={() => dispatch({ type: 'step', direction: 1 })} disabled={cursor === config.timestamps.length - 1}>Step →</button>
     </div>
-    {view === 'Analysis' && <p className="caption playback-note">Playback paused for analysis; scrub or step to change the shared time.</p>}
     <div className="clock-slider">
       <div className="slider-current">{time(cursor)}</div>
       <input type="range" min="0" max={config.timestamps.length - 1} step="1" value={cursor}
@@ -28,31 +27,31 @@ export function Clock({ state, dispatch }) {
   </section>
 }
 
-export function IntervalSlider({ interval, max, timestamps, timezone, onChange }) {
-  const [start, end] = interval
+export function DateRangeSlider({ dateRange, max, dates, onChange }) {
+  const [start, end] = dateRange
   const percent = (index) => index / Math.max(max, 1) * 100
-  const time = (index) => formatTime(timestamps[index], timezone)
+  const date = (index) => formatDate(dates[index])
   return <fieldset className="interval-selector">
-    <legend>Analysis time range</legend>
-    <div className="interval-labels"><span><small>FROM</small>{time(start)}</span><span><small>THROUGH</small>{time(end)}</span></div>
+    <legend>Analysis date range</legend>
+    <div className="interval-labels"><span><small>FROM</small>{date(start)}</span><span><small>THROUGH</small>{date(end)}</span></div>
     <div className="dual-range" style={{ '--start': `${percent(start)}%`, '--end': `${percent(end)}%` }}>
       <div className="range-track" />
       <input type="range" min="0" max={max} step="1" value={start}
-        aria-label="Analysis start" aria-valuetext={time(start)}
+        aria-label="Analysis start date" aria-valuetext={date(start)} disabled={max === 0}
         style={{ zIndex: start === max ? 4 : 2 }}
         onChange={(event) => onChange([Math.min(Number(event.target.value), end), end])} />
       <input type="range" min="0" max={max} step="1" value={end}
-        aria-label="Analysis end" aria-valuetext={time(end)}
+        aria-label="Analysis end date" aria-valuetext={date(end)} disabled={max === 0}
         onChange={(event) => onChange([start, Math.max(Number(event.target.value), start)])} />
     </div>
     <div className="interval-fields">
-      <label>Start reading<select aria-label="Analysis start reading" value={start}
+      <label>Start date<select value={start}
         onChange={(event) => onChange([Number(event.target.value), end])}>
-        {timestamps.slice(0, end + 1).map((stamp, index) => <option key={stamp} value={index}>{time(index)}</option>)}
+        {dates.slice(0, end + 1).map((day, index) => <option key={day} value={index}>{date(index)}</option>)}
       </select></label>
-      <label>End reading<select aria-label="Analysis end reading" value={end}
+      <label>End date<select value={end}
         onChange={(event) => onChange([start, Number(event.target.value)])}>
-        {timestamps.slice(start, max + 1).map((stamp, offset) => <option key={stamp} value={start + offset}>{time(start + offset)}</option>)}
+        {dates.slice(start, max + 1).map((day, offset) => <option key={day} value={start + offset}>{date(start + offset)}</option>)}
       </select></label>
     </div>
   </fieldset>

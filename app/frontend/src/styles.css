@@ -137,6 +137,24 @@ h3 {
   margin-bottom:16px;
 }
 
+.operations-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 20px;
+}
+
+.operations-tabs button {
+  font-size:13px;
+  padding:9px 14px;
+}
+
+.operations-tabs button.active {
+  background:var(--green);
+  color:#fff;
+  border-color:var(--green);
+}
+
 .app-shell {
   display:flex;
   min-height:100vh;
@@ -401,59 +419,6 @@ main {
   color:var(--muted);
 }
 
-.workspace-tabs {
-  display:flex;
-  gap:7px;
-  border-bottom:1px solid var(--border);
-  margin:0 0 27px;
-}
-
-.workspace-tabs button {
-  border:0;
-  border-radius:0;
-  padding:14px 19px 15px;
-  background:transparent;
-  font-size:13px;
-  color:#74847e;
-  position:relative;
-}
-
-.workspace-tabs button.active {
-  color:var(--green);
-  font-weight:650;
-}
-
-.workspace-tabs button.active:after {
-  content:'';
-  height:2px;
-  background:var(--green);
-  position:absolute;
-  bottom:-1px;
-  left:0;
-  right:0;
-}
-
-.tab-dot {
-  display:inline-block;
-  width:11px;
-  height:11px;
-  border:1.5px solid #a8b7af;
-  border-radius:50%;
-  position:relative;
-}
-
-.active .tab-dot {
-  border-color:var(--green);
-}
-
-.active .tab-dot:after {
-  content:'';
-  position:absolute;
-  inset:2px;
-  border-radius:50%;
-  background:var(--green);
-}
-
 .clock {
   margin-bottom:30px;
 }
@@ -490,11 +455,6 @@ main {
 
 .playback-buttons .primary span {
   font-size:10px;
-}
-
-.playback-note {
-  margin:13px 0 0;
-  font-size:12px;
 }
 
 .clock-slider {
@@ -895,6 +855,28 @@ input[type=range]::-moz-range-thumb {
   margin-bottom:22px;
 }
 
+.hour-selector {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:22px;
+  font-size:13px;
+}
+
+.hour-selector label {
+  font-weight:550;
+}
+
+.hour-selector select {
+  width:110px;
+}
+
+.hour-selector .caption {
+  margin:0;
+  font-size:11px;
+}
+
 .interval-selector {
   border:0;
   min-width:0;
@@ -1053,29 +1035,6 @@ input[type=range]::-moz-range-thumb {
 .analysis-note {
   font-size:12px;
   margin:17px 0 27px;
-}
-
-.daily-heading {
-  display:flex;
-  gap:12px;
-  align-items:baseline;
-  justify-content:space-between;
-  margin-bottom:13px;
-}
-
-.daily-heading h3 {
-  font-size:15px;
-}
-
-.daily-heading .caption {
-  margin:0;
-  font-size:11px;
-}
-
-.daily-charts {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
 }
 
 .info-message {
@@ -1242,13 +1201,6 @@ input[type=range]::-moz-range-thumb {
   .metric-detail {
     font-size:9px;
   }
-  .daily-charts {
-    grid-template-columns:1fr;
-  }
-  .daily-heading {
-    flex-wrap:wrap;
-    gap:7px;
-  }
 }
 
 @media(max-width:800px) {
@@ -1334,13 +1286,6 @@ input[type=range]::-moz-range-thumb {
   .lede {
     font-size:13px;
   }
-  .workspace-tabs {
-    margin-bottom:23px;
-  }
-  .workspace-tabs button {
-    font-size:12px;
-    padding:13px 18px;
-  }
   .clock-tag {
     display:none;
   }
@@ -1419,9 +1364,6 @@ input[type=range]::-moz-range-thumb {
   }
   .chart.history-chart.pending {
     min-height:260px;
-  }
-  .daily-charts {
-    gap:16px;
   }
   .queue-table th,.queue-table td {
     padding:11px 9px;

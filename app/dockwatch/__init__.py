@@ -7,10 +7,11 @@ from .qc import (
     snapshot_at,
     snapshot_metrics,
     station_history,
+    station_hour_history,
 )
 
 __all__ = [
     "load_bundle", "load_observations", "load_settings", "load_stations",
     "planned_timestamps", "hourly_changes",
-    "individual_limits", "snapshot_at", "snapshot_metrics", "station_history",
+    "individual_limits", "snapshot_at", "snapshot_metrics", "station_history", "station_hour_history",
 ]

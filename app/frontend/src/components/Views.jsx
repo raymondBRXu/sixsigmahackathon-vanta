@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../api.js'
 import { useResource } from '../hooks.js'
-import { count, decimal, formatTime, moveLabel, percent, STATUS } from '../format.js'
-import { IntervalSlider } from './Controls.jsx'
+import { count, decimal, formatDate, formatHour, formatTime, moveLabel, percent, STATUS } from '../format.js'
+import { DateRangeSlider } from './Controls.jsx'
 import StationMap from './StationMap.jsx'
 
 export function Metric({ label, value, detail }) {
@@ -23,7 +23,7 @@ function ChartImage({ url, alt, kind }) {
   const [error, setError] = useState(false)
   return <div className={`chart ${kind === 'history' ? 'history-chart' : ''} ${loaded ? 'loaded' : 'pending'}`}>
     {!loaded && !error && <p className="chart-message" role="status">Drawing chart…</p>}
-    {error ? <p className="chart-message error" role="alert">This chart could not load. Change the interval or reload to try again.</p>
+    {error ? <p className="chart-message error" role="alert">This chart could not load. Change the selection or reload to try again.</p>
       : <img src={url} alt={alt} onLoad={() => setLoaded(true)} onError={() => setError(true)} />}
   </div>
 }
@@ -44,7 +44,7 @@ export function Operations({ state, dispatch, camera }) {
     <div className="operations-grid">
       <div className="map-panel">
         <h2>Ithaca — simulated bikeshare network</h2>
-        <p className="caption">Hover for a reading and action. Double-click a station to select its details and analysis.</p>
+        <p className="caption">Hover for a reading and action. Double-click a station to select its details.</p>
         <div className="map-shell">
           <StationMap stations={data?.stations || []} selected={station} tiles={tiles}
             timezone={config.timezone} camera={camera}
@@ -85,9 +85,11 @@ export function Operations({ state, dispatch, camera }) {
   </section>
 }
 
-export function Analysis({ state, dispatch }) {
-  const { source, cursor, station, interval, config } = state
-  const params = { source, cursor, station_id: station, start: interval[0], end: interval[1] }
+export function StationHistory({ state, dispatch }) {
+  const { source, historyStation: station, dateRange, hour, config } = state
+  const cursor = config.timestamps.length - 1
+  const params = { source, cursor, station_id: station, hour,
+    start_date: config.service_dates[dateRange[0]], end_date: config.service_dates[dateRange[1]] }
   const key = JSON.stringify(params)
   const [settledKey, setSettledKey] = useState(key)
   useEffect(() => {
@@ -98,14 +100,20 @@ export function Analysis({ state, dispatch }) {
   const { data, error } = useResource('analysis', settledParams, key === settledKey)
   const summary = data?.summary
   const limits = summary?.limits
-  const dailyParams = { source, cursor, station_id: station }
-  return <section aria-label="Station analysis">
+  return <section aria-label="Individuals chart history">
     <div className="analysis-heading">
       <h2>{station} · {config.stations.find((row) => row.station_id === station).display_name}</h2>
-      <p className="caption">Choose an interval through {formatTime(config.timestamps[cursor], config.timezone, true)}. All scheduled hours are included; missing readings remain gaps.</p>
+      <p className="caption">Compare this station at the same operating hour across service dates. Each point is one observed bike count. The full dataset is available; choose the dates to plot below.</p>
     </div>
-    <IntervalSlider interval={interval} max={cursor} timestamps={config.timestamps} timezone={config.timezone}
-      onChange={(value) => dispatch({ type: 'setInterval', interval: value })} />
+    <div className="hour-selector">
+      <label htmlFor="analysis-hour">Operating hour</label>
+      <select id="analysis-hour" value={hour} onChange={(event) => dispatch({ type: 'selectHour', hour: Number(event.target.value) })}>
+        {config.hours.map((value) => <option key={value} value={value}>{formatHour(value)}</option>)}
+      </select>
+      <span className="caption">{config.timezone}</span>
+    </div>
+    <DateRangeSlider dateRange={dateRange} max={config.service_dates.length - 1} dates={config.service_dates}
+      onChange={(value) => dispatch({ type: 'setDateRange', dateRange: value })} />
     {error && <p className="error-banner" role="alert">{error}</p>}
     <div className="metric-grid" aria-busy={!summary && !error}>
       <Metric label="Observed readings" value={summary ? `${summary.n} / ${summary.planned}` : '—'} />
@@ -113,15 +121,10 @@ export function Analysis({ state, dispatch }) {
       <Metric label="LCL" value={decimal(limits?.lcl)} />
       <Metric label="UCL" value={decimal(limits?.ucl)} />
     </div>
-    {data ? <Chart kind="history" params={settledParams} alt={`Individuals chart for ${station}, all hourly readings from ${formatTime(config.timestamps[interval[0]], config.timezone)} through ${formatTime(config.timestamps[interval[1]], config.timezone)}, with center line and estimated control limits when supported.`} />
-      : !error && <div className="chart history-chart pending"><p className="chart-message" role="status">Loading interval analysis…</p></div>}
+    {data ? <Chart kind="history" params={settledParams} alt={`Individuals chart for ${station} at ${formatHour(hour)} on each service date from ${formatDate(params.start_date)} through ${formatDate(params.end_date)}, with dates on the horizontal axis, center line and estimated control limits when supported.`} />
+      : !error && <div className="chart history-chart pending"><p className="chart-message" role="status">Loading same-hour analysis…</p></div>}
     {summary && (!limits ? <p className="info-message" role="status">{summary.reason}</p>
-      : <p className="caption">Estimated from {summary.pairs} adjacent hourly pairs in the selected interval · mean moving range {limits.mr_mean.toFixed(3)} · sigma estimate {limits.sigma.toFixed(3)}.</p>)}
-    <p className="caption analysis-note">Moving ranges exclude missing hours and overnight gaps. These exploratory limits may reflect daily patterns and serial dependence; they do not establish process stability or trigger alarms.</p>
-    <div className="daily-heading"><h3>Today at a glance</h3><p className="caption">These two charts follow the simulation day and time above.</p></div>
-    <div className="daily-charts">
-      <Chart kind="inventory" params={dailyParams} alt={`Today's inventory for ${station}, through the simulation time. Missing readings remain gaps; red points mark empty or full readings.`} />
-      <Chart kind="heatmap" params={dailyParams} alt="Occupancy heatmap across all stations and today's elapsed hours. Gray cells are missing readings." />
-    </div>
+      : <p className="caption">Estimated from {summary.pairs} consecutive service-date pairs at {formatHour(hour)} · mean moving range {limits.mr_mean.toFixed(3)} · sigma estimate {limits.sigma.toFixed(3)}.</p>)}
+    <p className="caption analysis-note">Missing scheduled readings remain gaps and break moving-range pairs. These exploratory limits may reflect serial dependence; they do not establish process stability or trigger alarms.</p>
   </section>
 }

@@ -5,10 +5,15 @@ NIST's deterministic d2=1.128. Selected-interval limits describe the data; they
 do not establish process stability or a calibrated false-alarm rate.
 """
 
+from datetime import date
+
 import numpy as np
 import pandas as pd
 
 from .data import planned_timestamps
+
+
+REALTIME_WINDOW_SIZE = 8
 
 
 def _as_of(value, timezone):
@@ -88,6 +93,25 @@ def hourly_changes(observations):
     return result.sort_values(["timestamp", "station_id"]).reset_index(drop=True)
 
 
+def realtime_history(observations, settings, as_of_time):
+    """Return every station's last eight elapsed scheduled slots in calendar order.
+
+    The collection calendar determines the window, including missing readings
+    and overnight transitions. Reindexing preserves missing counts without
+    carrying earlier readings forward. No future slots or observations enter
+    the result, and fewer than eight elapsed slots produce a shorter history.
+    Input observations are already validated against the collection settings.
+    """
+    now = _as_of(as_of_time, settings["timezone"])
+    stamps = planned_timestamps(settings)
+    stamps = stamps[stamps <= now][-REALTIME_WINDOW_SIZE:]
+    grid = pd.MultiIndex.from_product(
+        [settings["station_ids"], stamps], names=["station_id", "timestamp"]
+    )
+    counts = observations.set_index(["station_id", "timestamp"])["bikes"]
+    return counts.reindex(grid).rename("bikes").reset_index()
+
+
 def _individual_data(values, timestamps=None):
     sequence = pd.Series(values, dtype=float).reset_index(drop=True)
     if np.isinf(sequence).any():
@@ -153,4 +177,58 @@ def station_history(observations, settings, station_id, start_time, end_time):
         summary["reason"] = "Zero moving-range variation: UCL/LCL cannot be estimated."
     else:
         summary["limits"] = individual_limits(values, history["timestamp"])
+    return history, summary
+
+
+def _service_date(value, name):
+    """Parse a date without accepting an implicit time or timezone conversion."""
+    try:
+        parsed = date.fromisoformat(str(value))
+        if parsed.isoformat() != str(value):
+            raise ValueError
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"{name} must be an ISO date (YYYY-MM-DD).") from error
+    return parsed
+
+
+def station_hour_history(observations, settings, station_id, start_date, end_date, hour, as_of_time):
+    """Compare one station/hour across an inclusive scheduled service-date range.
+
+    Reindex to every elapsed selected-hour slot before estimating moving ranges.
+    Consecutive scheduled dates form pairs even across non-service days; missing
+    scheduled readings break pairs. The clock cutoff excludes future slots from
+    both observations and planned coverage. Limits use the same d2=1.128 estimator
+    as ``individual_limits``, applied to this ordered same-hour sequence.
+    """
+    if station_id not in settings["station_ids"]:
+        raise ValueError("Select a configured station.")
+    if type(hour) is not int or hour not in settings["hours"]:
+        raise ValueError("Select a scheduled operating hour.")
+    start = _service_date(start_date, "start_date")
+    end = _service_date(end_date, "end_date")
+    now = _as_of(as_of_time, settings["timezone"])
+    if start > end:
+        raise ValueError("The start_date must not be after end_date.")
+    if end > now.date():
+        raise ValueError("The end_date must not be after the playback date.")
+    stamps = planned_timestamps(settings)
+    stamps = stamps[(stamps.date >= start) & (stamps.date <= end)
+                    & (stamps.hour == hour) & (stamps <= now)]
+    counts = observations.loc[observations["station_id"].eq(station_id)].set_index("timestamp")["bikes"]
+    history = pd.DataFrame({"timestamp": stamps, "bikes": counts.reindex(stamps).to_numpy(),
+                            "station_id": station_id})
+    values, ranges = _individual_data(history["bikes"])
+    n = int(values.count())
+    summary = {"limits": None, "cl": float(values.mean()) if n else None,
+               "n": n, "planned": len(history), "pairs": len(ranges), "reason": "", "hour": hour}
+    if not len(history):
+        summary["reason"] = "No elapsed scheduled readings at this hour in the selected date range."
+    elif not n:
+        summary["reason"] = "No observed readings at this hour in the selected date range."
+    elif ranges.empty:
+        summary["reason"] = "UCL/LCL need valid readings at this hour on two consecutive scheduled service dates."
+    elif ranges.mean() == 0:
+        summary["reason"] = "Zero moving-range variation: UCL/LCL cannot be estimated."
+    else:
+        summary["limits"] = individual_limits(values)
     return history, summary

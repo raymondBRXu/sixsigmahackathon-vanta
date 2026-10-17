@@ -6,8 +6,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from dockwatch.data import load_bundle, load_observations, load_settings, load_stations
-from dockwatch.qc import hourly_changes, individual_limits, snapshot_at, snapshot_metrics, station_history
+from dockwatch.data import load_bundle, load_observations, load_settings, load_stations, planned_timestamps
+from dockwatch.qc import (
+    hourly_changes, individual_limits, realtime_history, snapshot_at, snapshot_metrics,
+    station_history, station_hour_history,
+)
 
 
 def make_stations(n=1):
@@ -137,6 +140,66 @@ def interval_data():
     return load_observations(observations_for(rows), stations, settings), settings
 
 
+@pytest.mark.parametrize("cursor,expected_counts", [
+    (0, [10]),
+    (7, [10, 12, 11, 13, 14, 25, 22, 24]),
+    (8, [12, 11, 13, 14, 25, 22, 24, 20]),
+])
+def test_realtime_window_known_answers_and_overnight_schedule(interval_data, cursor, expected_counts):
+    observations, settings = interval_data
+    plan = planned_timestamps(settings)
+    history = realtime_history(observations, settings, plan[cursor])
+    first = history.loc[history["station_id"].eq("S01")]
+    second = history.loc[history["station_id"].eq("S02")]
+    assert first["bikes"].tolist() == expected_counts
+    assert second["bikes"].tolist() == [0] * len(expected_counts)
+    assert first["timestamp"].tolist() == list(plan[max(0, cursor - 7):cursor + 1])
+    assert second["timestamp"].tolist() == first["timestamp"].tolist()
+    assert len(history) == len(expected_counts) * 2
+
+
+def test_realtime_window_retains_missing_slots_and_stations(interval_data):
+    observations, settings = interval_data
+    plan = planned_timestamps(settings)
+    reduced = observations.loc[observations["station_id"].eq("S01")
+                               & observations["timestamp"].ne(plan[2])]
+    history = realtime_history(reduced, settings, plan[7])
+    first = history.loc[history["station_id"].eq("S01")].reset_index(drop=True)
+    assert len(first) == 8 and pd.isna(first.loc[2, "bikes"])
+    assert first.loc[1, "bikes"] == 12 and first.loc[3, "bikes"] == 13
+    assert first.loc[2, "timestamp"] == plan[2]
+    assert history.loc[history["station_id"].eq("S02"), "bikes"].isna().all()
+    empty = realtime_history(observations.iloc[:0], settings, plan[7])
+    assert len(empty) == 16 and empty["bikes"].isna().all()
+
+
+def test_realtime_cutoff_rewind_and_source_isolation(interval_data):
+    observations, settings = interval_data
+    plan = planned_timestamps(settings)
+    original = observations.copy(deep=True)
+    first = realtime_history(observations, settings, plan[7])
+    changed = observations.copy()
+    changed.loc[changed["timestamp"].gt(plan[7]), "bikes"] = 30
+    pd.testing.assert_frame_equal(first, realtime_history(changed, settings, plan[7]))
+    realtime_history(observations, settings, plan[-1])
+    pd.testing.assert_frame_equal(first, realtime_history(observations, settings, plan[7]))
+    pd.testing.assert_frame_equal(first, realtime_history(observations, settings, "2026-09-29T09:30:00-04:00"))
+    other_source = observations.copy()
+    other_source["bikes"] = 15
+    assert realtime_history(other_source, settings, plan[7])["bikes"].eq(15).all()
+    pd.testing.assert_frame_equal(observations, original)
+    pd.testing.assert_frame_equal(first, realtime_history(observations, settings, plan[7]))
+
+
+def test_realtime_empty_elapsed_calendar_and_timezone_validation(interval_data):
+    observations, settings = interval_data
+    history = realtime_history(observations, settings, "2026-09-28T06:00:00-04:00")
+    assert history.empty
+    assert history.columns.tolist() == ["station_id", "timestamp", "bikes"]
+    with pytest.raises(ValueError, match="timezone"):
+        realtime_history(observations, settings, "2026-09-28 09:00")
+
+
 def test_selected_interval_known_answer_includes_all_hours(interval_data):
     observations, settings = interval_data
     start, end = "2026-09-28T07:00:00-04:00", "2026-09-28T11:00:00-04:00"
@@ -253,3 +316,108 @@ def test_real_edge_cases_show_same_occupancy_and_different_availability():
     polarized = snapshot_metrics(snapshot_at(observations, stations, "2026-09-28T10:00:00-04:00"))
     assert balanced["mean_occupancy"] == polarized["mean_occupancy"] == 0.5
     assert balanced["availability"] == 1 and polarized["availability"] == 0
+
+
+@pytest.fixture
+def same_hour_data():
+    stations = make_stations(2)
+    settings = load_settings({"timezone": "America/New_York", "station_ids": ["S01", "S02"],
+                              "hours": [7, 8, 9],
+                              "service_dates": ["2026-09-24", "2026-09-25", "2026-09-28",
+                                                "2026-09-29", "2026-09-30"]}, stations)
+    rows = [(f"{day}T08:00:00-04:00", "S01", count)
+            for day, count in zip(settings["service_dates"], [10, 12, 11, 13, 14])]
+    rows += [(f"{day}T{hour:02}:00:00-04:00", station, 30)
+             for day in settings["service_dates"] for hour in settings["hours"]
+             for station in settings["station_ids"] if (station, hour) != ("S01", 8)]
+    return load_observations(observations_for(rows), stations, settings), settings
+
+
+def test_same_hour_known_answer_includes_consecutive_service_dates_across_weekend(same_hour_data):
+    observations, settings = same_hour_data
+    history, summary = station_hour_history(observations, settings, "S01", "2026-09-24",
+                                            "2026-09-30", 8, "2026-09-30T09:00:00-04:00")
+    assert history["bikes"].tolist() == [10, 12, 11, 13, 14]
+    assert history["timestamp"].dt.strftime("%Y-%m-%d").tolist() == settings["service_dates"]
+    assert history["timestamp"].dt.hour.eq(8).all()
+    assert (summary["n"], summary["planned"], summary["pairs"], summary["hour"]) == (5, 5, 4, 8)
+    assert summary["cl"] == 12
+    assert summary["limits"] == pytest.approx({
+        "cl": 12, "lcl": 8.01063829787234, "ucl": 15.98936170212766,
+        "mr_mean": 1.5, "sigma": 1.3297872340425534, "n": 5, "pairs": 4,
+    })
+
+
+def test_same_hour_isolates_station_hour_dates_and_future_slots(same_hour_data):
+    observations, settings = same_hour_data
+    args = (settings, "S01", "2026-09-25", "2026-09-30", 8, "2026-09-30T07:00:00-04:00")
+    history, summary = station_hour_history(observations, *args)
+    assert history["bikes"].tolist() == [12, 11, 13]
+    assert (summary["planned"], summary["pairs"]) == (3, 2)
+    altered = observations.copy()
+    outside = ~altered["timestamp"].isin(history["timestamp"]) | altered["station_id"].ne("S01")
+    altered.loc[outside, "bikes"] = 0
+    changed_history, changed_summary = station_hour_history(altered, *args)
+    pd.testing.assert_frame_equal(history, changed_history)
+    assert summary == changed_summary
+    elapsed, _ = station_hour_history(observations, settings, "S01", "2026-09-25", "2026-09-30",
+                                       8, "2026-09-30T08:00:00-04:00")
+    assert elapsed["bikes"].tolist() == [12, 11, 13, 14]
+
+
+def test_missing_same_hour_service_date_breaks_pairs(same_hour_data):
+    observations, settings = same_hour_data
+    observations = observations.loc[~observations["timestamp"].eq(pd.Timestamp("2026-09-28T08:00:00-04:00"))]
+    history, summary = station_hour_history(observations, settings, "S01", "2026-09-24", "2026-09-30",
+                                            8, "2026-09-30T09:00:00-04:00")
+    assert pd.isna(history.loc[2, "bikes"])
+    assert (summary["n"], summary["planned"], summary["pairs"]) == (4, 5, 2)
+    assert summary["cl"] == 12.25
+    assert summary["limits"]["mr_mean"] == 1.5
+
+
+@pytest.mark.parametrize("values,expected_mean,expected_pairs,reason", [
+    ([15, 15, 15, 15, 15], 15, 4, "Zero moving-range"),
+    ([10, None, None, None, None], 10, 0, "consecutive scheduled service dates"),
+    ([10, None, 20, None, 30], 20, 0, "consecutive scheduled service dates"),
+    ([None, None, None, None, None], None, 0, "No observed readings"),
+])
+def test_degenerate_same_hour_keeps_mean_and_missingness(same_hour_data, values, expected_mean, expected_pairs, reason):
+    observations, settings = same_hour_data
+    observations = observations.loc[observations["station_id"].eq("S01") & observations["timestamp"].dt.hour.eq(8)].copy()
+    observations["bikes"] = values
+    history, summary = station_hour_history(observations.dropna(subset=["bikes"]), settings, "S01",
+                                            "2026-09-24", "2026-09-30", 8, "2026-09-30T09:00:00-04:00")
+    assert len(history) == 5 and summary["cl"] == expected_mean
+    assert summary["limits"] is None and summary["pairs"] == expected_pairs
+    assert reason in summary["reason"]
+
+
+@pytest.mark.parametrize("day,cutoff,expected_count", [
+    ("2026-09-24", "2026-09-24T07:00:00-04:00", 0),
+    ("2026-09-24", "2026-09-24T08:00:00-04:00", 1),
+    ("2026-09-26", "2026-09-30T09:00:00-04:00", 0),
+])
+def test_same_hour_single_date_and_empty_elapsed_calendar(same_hour_data, day, cutoff, expected_count):
+    observations, settings = same_hour_data
+    history, summary = station_hour_history(observations, settings, "S01", day, day, 8, cutoff)
+    assert len(history) == summary["planned"] == summary["n"] == expected_count
+    assert summary["limits"] is None and summary["pairs"] == 0 and summary["reason"]
+
+
+@pytest.mark.parametrize("overrides,message", [
+    ({"station_id": "S99"}, "configured station"),
+    ({"hour": 6}, "operating hour"),
+    ({"hour": 8.5}, "operating hour"),
+    ({"start_date": "2026-09-31"}, "ISO date"),
+    ({"start_date": "2026-09-24T08:00:00"}, "ISO date"),
+    ({"start_date": "2026-09-30", "end_date": "2026-09-24"}, "start_date"),
+    ({"end_date": "2026-10-01"}, "playback date"),
+    ({"as_of_time": "2026-09-30 09:00"}, "timezone"),
+])
+def test_same_hour_validates_inputs(same_hour_data, overrides, message):
+    observations, settings = same_hour_data
+    params = {"station_id": "S01", "start_date": "2026-09-24", "end_date": "2026-09-30",
+              "hour": 8, "as_of_time": "2026-09-30T09:00:00-04:00", **overrides}
+    with pytest.raises(ValueError, match=message):
+        station_hour_history(observations, settings, **params)

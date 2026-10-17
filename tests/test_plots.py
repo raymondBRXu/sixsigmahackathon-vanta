@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from dockwatch.plots import history_plot, inventory_plot, occupancy_heatmap
-from dockwatch.qc import individual_limits
+from dockwatch.qc import individual_limits, station_hour_history
 
 
 @pytest.fixture
@@ -125,6 +125,61 @@ def test_degenerate_history_renders_available_mean_without_limits(chart_data, co
         assert limit_layers(plot)[0]._data["level"].tolist() == [value]
     else:
         assert not limit_layers(plot)
+    figure = plot.draw()
+    figure.canvas.draw()
+    plt.close(figure)
+
+
+@pytest.fixture
+def same_hour_chart():
+    settings = {"timezone": "America/New_York", "station_ids": ["S01"], "hours": [9],
+                "service_dates": ["2026-09-24", "2026-09-25", "2026-09-28", "2026-09-29", "2026-09-30"]}
+    observations = pd.DataFrame({
+        "timestamp": pd.to_datetime([f"{day} 09:00" for day in settings["service_dates"]]).tz_localize(settings["timezone"]),
+        "station_id": "S01", "bikes": [10, 12, 11, 13, 14],
+    })
+    return observations, settings
+
+
+def test_same_hour_plot_keeps_limits_date_axis_and_weekend_connections(same_hour_chart):
+    observations, settings = same_hour_chart
+    history, summary = station_hour_history(observations, settings, "S01", "2026-09-24", "2026-09-30",
+                                            9, "2026-09-30T09:00:00-04:00")
+    plot = history_plot(history, summary, 30)
+    assert plot.labels.x == "Scheduled service date"
+    assert plot.scales.get_scales("x").labels == ["Sep 24", "Sep 25", "Sep 28", "Sep 29", "Sep 30"]
+    assert "09:00" in plot.labels.subtitle and "4 consecutive service-date pairs" in plot.labels.subtitle
+    assert limit_layers(plot)[0]._data["level"].tolist() == pytest.approx([12, 8.010638298, 15.989361702])
+    assert line_layers(plot)[0]._data["segment"].nunique() == 1
+    assert len(line_layers(plot)[0]._data) == 5
+    figure = plot.draw()
+    figure.canvas.draw()
+    plt.close(figure)
+
+
+def test_same_hour_plot_breaks_lines_at_missing_scheduled_dates(same_hour_chart):
+    observations, settings = same_hour_chart
+    history, summary = station_hour_history(observations.drop(index=2), settings, "S01", "2026-09-24",
+                                            "2026-09-30", 9, "2026-09-30T09:00:00-04:00")
+    plot = history_plot(history, summary, 30)
+    assert pd.isna(plot.data.loc[2, "bikes"])
+    assert plot.data.loc[1, "segment"] != plot.data.loc[3, "segment"]
+    assert line_layers(plot)[0]._data.groupby("segment")["bikes"].apply(list).tolist() == [[10, 12], [13, 14]]
+    assert "Missing scheduled dates break lines" in " ".join(plot.labels.caption.split())
+
+
+@pytest.mark.parametrize("cutoff,value", [
+    ("2026-09-24T08:00:00-04:00", None),
+    ("2026-09-24T09:00:00-04:00", 10),
+    ("2026-09-30T09:00:00-04:00", 10),
+])
+def test_same_hour_plot_renders_empty_single_and_constant_ranges(same_hour_chart, cutoff, value):
+    observations, settings = same_hour_chart
+    history, summary = station_hour_history(observations.assign(bikes=10), settings, "S01", "2026-09-24",
+                                            cutoff[:10], 9, cutoff)
+    plot = history_plot(history, summary, 30)
+    assert summary["limits"] is None and summary["cl"] == value
+    assert bool(limit_layers(plot)) == (value is not None)
     figure = plot.draw()
     figure.canvas.draw()
     plt.close(figure)

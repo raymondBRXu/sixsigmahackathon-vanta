@@ -25,10 +25,47 @@ spec: SPEC.md
 updated: "2026-10-16"
 
 tasks:
+  - id: H-10
+    title: Add station chart views for date analysis and realtime operations
+    points: "Preserves valid QC analysis and dashboard usability"
+    status: in_progress
+    owner: "Codex with disjoint backend, frontend and review subtasks"
+    started_at: "2026-10-16"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/MVP.md", "docs/plan.md", "demo/", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested by the user after the React migration commit.
+      Keep station selection, add an operating-hour selector, and replace the
+      Individuals chart time range with an inclusive service-date range.
+      Use one observed count per selected hour per service date. Estimate
+      moving ranges between consecutive scheduled service dates, preserving
+      missing observations. Keep CL/UCL/LCL. The user further requested removing
+      the Analysis playback controls, loading the full dataset independently
+      of Operations time, and defaulting the retained date slider to its full range.
+      Further authorized a Realtime View by Station page within Operations:
+      20 fixed-size charts, fixed lines 15/24/6, and a rolling window of eight
+      scheduled hourly slots updated by the existing simulation playback.
+      Further authorized clicking each realtime chart to enlarge it into a
+      single-station view, with a return control and uninterrupted playback.
+      Latest authorization replaces the top Operations/Analysis tabs with
+      Overview / View by Station. Each station card's upper-right History button
+      opens the Individuals chart in a modal for that station, defaulting to
+      07:00 and all service dates. Chart-body enlargement remains available.
+    definition_of_done: >
+      uv run --locked --extra api pytest passes; npm test and npm run build
+      in app/frontend pass. Browser checks cover station/hour/date changes,
+      date-only axis, limits, full default range and independence from Operations
+      playback, realtime 20-chart rendering, fixed reference lines, eight-slot
+      rolling updates, rewind, missingness and fixed dimensions. The single-chart
+      enlargement, return, keyboard access and ongoing playback pass browser
+      checks. History modal checks cover correct station, default hour/full dates,
+      independent date analysis, close/Escape/focus, and no obsolete top tabs;
+      git diff --check passes.
+    result: "Implemented and locally verified: current frontend has 44 passing tests and a successful production build; unchanged backend previously passed 152 tests. Browser confirms Overview/View by Station navigation, 20 History buttons, correct clicked station at 07:00/full dates, editable history selections, modal close/Escape/focus, paused playback, preserved chart enlargement and responsive layout. Ready pending requested commit."
+
   - id: H-09
     title: Rebuild the approved dashboard in React with Python API parity
     points: "Preserves working tool, valid QC analysis, documentation and reproducibility"
-    status: in_progress
+    status: done
     owner: "Codex with disjoint frontend, backend and review subtasks"
     started_at: "2026-10-16"
     owns: ["app/", "tests/", "scripts/", "README.md", "SPEC.md", "docs/MVP.md", "docs/plan.md", "demo/", "data/README.md", "pyproject.toml", "uv.lock", "pytest.ini", ".python-version", ".node-version", ".gitignore", ".github/"]
@@ -42,7 +79,7 @@ tasks:
       covers default normal values, double-click station selection, playback,
       queue names, interval analysis, chart loading, CSV upload/download and
       mobile layout. Verify a self-contained local deployment bundle.
-    result: "Implemented and locally verified: 104 Python tests, 22 frontend tests, browser parity checks, isolated wheel install, and 17 deployment checksums pass. Check-in awaits a requested commit; remote publication was not requested."
+    result: "Implemented and locally verified: 104 Python tests, 22 frontend tests, browser parity checks, isolated wheel install, and 17 deployment checksums pass. Committed as b5a24a3; remote publication was not requested."
 
   - id: H-01
     title: Fill in every FILL IN line in SPEC.md

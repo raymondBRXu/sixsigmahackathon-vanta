@@ -38,12 +38,14 @@ def _theme():
     )
 
 
-def _segmented(frame):
+def _segmented(frame, same_hour=False):
     data = frame.copy().reset_index(drop=True)
-    previous = data["timestamp"].shift()
-    adjacent = data["timestamp"].sub(previous).dt.total_seconds().eq(3600)
-    same_day = data["timestamp"].dt.date.eq(previous.dt.date)
-    breaks = data["bikes"].isna() | ~adjacent | ~same_day
+    breaks = data["bikes"].isna()
+    if not same_hour:
+        previous = data["timestamp"].shift()
+        adjacent = data["timestamp"].sub(previous).dt.total_seconds().eq(3600)
+        same_day = data["timestamp"].dt.date.eq(previous.dt.date)
+        breaks |= ~adjacent | ~same_day
     data["segment"] = breaks.cumsum()
     return data
 
@@ -53,14 +55,15 @@ def _line_data(data):
     return valid[valid.groupby("segment")["segment"].transform("size").ge(2)]
 
 
-def _date_axis(data):
+def _date_axis(data, date_only=False):
     step = max(1, len(data) // 6)
     positions = list(range(0, len(data), step))
     if len(data) and len(data) - 1 not in positions:
         if len(positions) > 1 and len(data) - 1 - positions[-1] < max(2, step / 2):
             positions.pop()
         positions.append(len(data) - 1)
-    labels = [pd.Timestamp(data.iloc[position]["timestamp"]).strftime("%b %d\n%H:%M") for position in positions]
+    date_format = "%b %d" if date_only else "%b %d\n%H:%M"
+    labels = [pd.Timestamp(data.iloc[position]["timestamp"]).strftime(date_format) for position in positions]
     return scale_x_continuous(breaks=positions, labels=labels)
 
 
@@ -125,10 +128,15 @@ def occupancy_heatmap(observations, stations, as_of_time, settings):
 
 
 def history_plot(history, summary, capacity):
-    """Plot all selected hourly counts, their mean and estimated Individuals limits."""
+    """Plot a scheduled series, its mean and estimated Individuals limits.
+
+    ``summary.hour`` selects the same-hour date view. Its input is reindexed to
+    every elapsed service-date slot by ``station_hour_history``.
+    """
     data = history.copy().reset_index(drop=True)
     data["position"] = range(len(data))
-    data = _segmented(data)
+    same_hour = summary.get("hour") is not None
+    data = _segmented(data, same_hour=same_hour)
     valid = data[data["bikes"].notna()]
     limits = summary["limits"]
     plot = ggplot(data, aes("position", "bikes"))
@@ -151,18 +159,27 @@ def history_plot(history, summary, capacity):
         plot += scale_linetype_manual(values=linetypes, breaks=labels, name="")
     lower = min(0, limits["lcl"]) if limits else 0
     upper = max(capacity, limits["ucl"]) if limits else capacity
-    subtitle = (f"{summary['n']}/{summary['planned']} hourly readings observed · "
-                f"{summary['pairs']} adjacent-hour pairs")
+    if same_hour:
+        subtitle = (f"{summary['hour']:02}:00 · {summary['n']}/{summary['planned']} daily readings observed · "
+                    f"{summary['pairs']} consecutive service-date pairs")
+        x_label = "Scheduled service date"
+        caption = ("Exploratory limits at a fixed hour; autocorrelation is not tested. "
+                   "Missing scheduled dates break lines. Limits are not stock targets.")
+    else:
+        subtitle = (f"{summary['n']}/{summary['planned']} hourly readings observed · "
+                    f"{summary['pairs']} adjacent-hour pairs")
+        x_label = "Scheduled observations (local date and hour)"
+        caption = ("Exploratory limits; intraday patterns and autocorrelation are not tested. "
+                   "Missing hours and overnight gaps break lines. Limits are not stock targets.")
     if summary["reason"]:
         subtitle += f" · {summary['reason']}"
     return (
         plot
-        + _date_axis(data)
+        + _date_axis(data, date_only=same_hour)
         + scale_y_continuous(limits=(lower - 0.5, upper + 0.5))
-        + labs(title="Individuals chart", x="Scheduled observations (local date and hour)", y="Bikes",
+        + labs(title="Individuals chart", x=x_label, y="Bikes",
                subtitle=fill(subtitle, width=90),
-               caption=fill("Exploratory limits; intraday patterns and autocorrelation are not tested. "
-                            "Missing hours and overnight gaps break lines. Limits are not stock targets.", width=90))
+               caption=fill(caption, width=90))
         + _theme()
         + theme(legend_title=element_blank())
     )

@@ -2,6 +2,15 @@ export const count = (value) => value === null || value === undefined ? '—' : 
 export const percent = (value) => value === null || value === undefined ? '—' : `${Math.round(value * 100)}%`
 export const decimal = (value) => value === null || value === undefined ? '—' : value.toFixed(2)
 
+export const formatHour = (hour) => `${String(hour).padStart(2, '0')}:00`
+
+export function formatDate(value) {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}
+
 export function formatTime(value, timezone, full = false) {
   if (!value) return 'No reading'
   const date = new Date(value)

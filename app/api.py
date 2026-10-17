@@ -25,7 +25,10 @@ from fastapi.staticfiles import StaticFiles
 
 from dockwatch.data import load_observations, load_settings, load_stations, planned_timestamps
 from dockwatch.plots import history_plot, inventory_plot, occupancy_heatmap
-from dockwatch.qc import hourly_changes, snapshot_at, snapshot_metrics, station_history
+from dockwatch.qc import (
+    REALTIME_WINDOW_SIZE, hourly_changes, realtime_history, snapshot_at, snapshot_metrics,
+    station_history, station_hour_history,
+)
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -49,6 +52,8 @@ MAX_UPLOAD_SOURCES = 8
 UPLOADS = OrderedDict()
 SOURCE_LOCK = RLock()
 PLOT_LOCK = RLock()
+# Operational inventory references are fixed policy values, not estimated I-chart limits.
+REALTIME_REFERENCE_LINES = {"center": 15, "upper": 24, "lower": 6}
 
 app = FastAPI(
     title="DockWatch API",
@@ -121,6 +126,26 @@ def _snapshot(source, cursor):
     return now, snapshot
 
 
+def _history_selection(observations, station_id, cursor, start, end, hour, start_date, end_date):
+    """Resolve the legacy hourly interval or the selected-hour date series."""
+    now = _timestamp(cursor)
+    if hour is None:
+        if start_date is not None or end_date is not None:
+            raise HTTPException(422, "Select an hour when using start_date or end_date.")
+        _, first, last = _interval(cursor, start, end)
+        history, summary = station_history(observations, SETTINGS, station_id, first, last)
+        selection = {"start": first.isoformat(), "end": last.isoformat()}
+    else:
+        first = SETTINGS["service_dates"][0] if start_date is None else start_date
+        last = now.date().isoformat() if end_date is None else end_date
+        try:
+            history, summary = station_hour_history(observations, SETTINGS, station_id, first, last, hour, now)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        selection = {"hour": hour, "start_date": first, "end_date": last}
+    return {**selection, "timestamp": now.isoformat()}, history, summary
+
+
 def _config(source):
     observations, label = _source(source)
     stations = STATIONS.assign(display_name=STATIONS["station_id"].map(NAMES))
@@ -131,6 +156,7 @@ def _config(source):
         "default_cursor": DEFAULT_CURSOR,
         "timezone": SETTINGS["timezone"],
         "hours": SETTINGS["hours"],
+        "service_dates": SETTINGS["service_dates"],
         "source": {"id": source, "label": label, "observations": len(observations)},
     }
 
@@ -165,25 +191,55 @@ def snapshot(source: str = "normal", cursor: int = Query(DEFAULT_CURSOR, ge=0)):
 def analysis(
     source: str = "normal", cursor: int = Query(DEFAULT_CURSOR, ge=0),
     station_id: str = "S01", start: int = Query(0, ge=0), end: int | None = Query(None, ge=0),
+    hour: int | None = Query(None, ge=0, le=23), start_date: str | None = None, end_date: str | None = None,
 ):
-    """Analyze every scheduled hourly reading in an inclusive elapsed interval."""
+    """Analyze one hour across dates, or all hours with the legacy start/end indexes."""
     observations, _ = _source(source)
     station = _station(station_id)
-    now, first, last = _interval(cursor, start, end)
-    history, summary = station_history(observations, SETTINGS, station_id, first, last)
+    selection, history, summary = _history_selection(
+        observations, station_id, cursor, start, end, hour, start_date, end_date
+    )
     return {
         "station_id": station_id, "capacity": int(station["capacity"]),
-        "start": first.isoformat(), "end": last.isoformat(), "timestamp": now.isoformat(),
+        **selection,
         "summary": summary, "history": _records(history),
     }
 
 
-def _render_chart(chart, observations, station_id, cursor, start, end):
-    now, first, last = _interval(cursor, start, end)
+@app.get("/api/realtime")
+def realtime(source: str = "normal", cursor: int = Query(DEFAULT_CURSOR, ge=0)):
+    """Return all station histories in one fixed eight-slot scheduled window."""
+    observations, _ = _source(source)
+    now = _timestamp(cursor)
+    history = realtime_history(observations, SETTINGS, now)
+    station_histories = {
+        station_id: _records(frame[["timestamp", "bikes"]])
+        for station_id, frame in history.groupby("station_id", sort=False)
+    }
+    return {
+        "timestamp": now.isoformat(),
+        "window_size": REALTIME_WINDOW_SIZE,
+        "timestamps": [stamp.isoformat() for stamp in history["timestamp"].drop_duplicates()],
+        "reference_lines": REALTIME_REFERENCE_LINES,
+        "stations": [
+            {"station_id": station.station_id, "display_name": NAMES[station.station_id],
+             "capacity": int(station.capacity), "history": station_histories.get(station.station_id, [])}
+            for station in STATIONS.itertuples(index=False)
+        ],
+    }
+
+
+def _render_chart(chart, observations, station_id, cursor, start, end, hour, start_date, end_date):
+    now = _timestamp(cursor)
     capacity = int(_station(station_id)["capacity"])
+    if chart == "history":
+        _, history, summary = _history_selection(
+            observations, station_id, cursor, start, end, hour, start_date, end_date
+        )
+    else:
+        _interval(cursor, start, end)
     with PLOT_LOCK:
         if chart == "history":
-            history, summary = station_history(observations, SETTINGS, station_id, first, last)
             plot = history_plot(history, summary, capacity)
         elif chart == "inventory":
             plot = inventory_plot(observations, station_id, now, capacity, SETTINGS["hours"])
@@ -200,8 +256,8 @@ def _render_chart(chart, observations, station_id, cursor, start, end):
 
 
 @lru_cache(maxsize=48)
-def _builtin_chart(chart, source, station_id, cursor, start, end):
-    return _render_chart(chart, _builtin(source), station_id, cursor, start, end)
+def _builtin_chart(chart, source, station_id, cursor, start, end, hour, start_date, end_date):
+    return _render_chart(chart, _builtin(source), station_id, cursor, start, end, hour, start_date, end_date)
 
 
 @app.get("/api/charts/{chart}.svg", response_class=Response)
@@ -209,15 +265,15 @@ def chart_svg(
     chart: Literal["history", "inventory", "heatmap"], source: str = "normal",
     cursor: int = Query(DEFAULT_CURSOR, ge=0), station_id: str = "S01",
     start: int = Query(0, ge=0), end: int | None = Query(None, ge=0),
+    hour: int | None = Query(None, ge=0, le=23), start_date: str | None = None, end_date: str | None = None,
 ):
     """Render the same plotnine views used by the original dashboard."""
     observations, _ = _source(source)
-    _interval(cursor, start, end)
     _station(station_id)
     if source in SCENARIO_BY_ID:
-        content = _builtin_chart(chart, source, station_id, cursor, start, end)
+        content = _builtin_chart(chart, source, station_id, cursor, start, end, hour, start_date, end_date)
     else:
-        content = _render_chart(chart, observations, station_id, cursor, start, end)
+        content = _render_chart(chart, observations, station_id, cursor, start, end, hour, start_date, end_date)
     return Response(content, media_type="image/svg+xml", headers={"Cache-Control": "no-store"})
 
 

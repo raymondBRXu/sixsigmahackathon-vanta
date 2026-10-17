@@ -2,7 +2,9 @@ import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { requestJson } from './api.js'
 import { dashboardReducer, initialState } from './state.js'
 import { Clock } from './components/Controls.jsx'
-import { Analysis, Operations } from './components/Views.jsx'
+import { Operations } from './components/Views.jsx'
+import RealtimeStations from './components/RealtimeStations.jsx'
+import HistoryDialog from './components/HistoryDialog.jsx'
 
 export default function App() {
   const [state, dispatch] = useReducer(dashboardReducer, initialState)
@@ -87,7 +89,7 @@ export default function App() {
         <p><strong>Two-way availability:</strong> a current reading has both a bike and an empty dock.</p>
         <p><strong>Coverage:</strong> valid current readings / planned stations.</p>
         <p><strong>Inventory rule:</strong> below 20% or above 80% suggests moving toward half capacity.</p>
-        <p><strong>Individuals chart:</strong> estimates the mean and control limits from your selected time interval; interpretation is left to you.</p>
+        <p><strong>Individuals chart:</strong> compares one station at the same operating hour across selected service dates, with its mean and estimated control limits; interpretation is left to you.</p>
       </details>
       <div className="sidebar-footer"><span className="tiny-dot" /> SYNTHETIC OBSERVATIONS</div>
     </aside>
@@ -96,17 +98,19 @@ export default function App() {
         <div><p className="eyebrow">BIKESHARE OPERATIONS / SIX SIGMA HACKATHON</p><h1>A clearer view of every dock.</h1><p className="lede">Spot service gaps. Understand the pattern. Prioritize the next move.</p></div>
         <div className="demo-label"><span>● SYNTHETIC DEMO</span><small>Ithaca · Team Vanta</small></div>
       </header>
-      <nav className="workspace-tabs" aria-label="Workspace">
-        {['Operations', 'Analysis'].map((view) => <button key={view} aria-pressed={state.view === view}
-          className={state.view === view ? 'active' : ''} onClick={() => dispatch({ type: 'selectView', view })}>
-          <span className="tab-dot" aria-hidden="true" />{view}
-        </button>)}
-      </nav>
       {loading ? <div className="loading-panel" role="status"><span className="loading-dot" />Loading observations…</div>
         : error ? <div className="error-banner" role="alert"><strong>The observation file could not be loaded.</strong><p>{error}</p><p>Correct the file and upload it again, or select a demo scenario.</p><button onClick={() => loadSource('normal')}>Use normal operations</button></div>
           : config && <>
+            <nav className="operations-tabs" aria-label="Dashboard views">
+              {['Overview', 'View by Station'].map((view) => <button key={view}
+                aria-pressed={state.operationsView === view} className={state.operationsView === view ? 'active' : ''}
+                onClick={() => dispatch({ type: 'selectOperationsView', view })}>{view}</button>)}
+            </nav>
             <Clock state={state} dispatch={dispatch} />
-            {state.view === 'Operations' ? <Operations state={state} dispatch={dispatch} camera={camera} /> : <Analysis state={state} dispatch={dispatch} />}
+            {state.operationsView === 'View by Station' ? <RealtimeStations state={state}
+              onHistory={(station) => dispatch({ type: 'openHistory', station })} />
+              : <Operations state={state} dispatch={dispatch} camera={camera} />}
+            {state.historyStation && <HistoryDialog state={state} dispatch={dispatch} />}
           </>}
       <footer className="page-footer">DOCKWATCH / TEAM VANTA · Synthetic inventory observations. No customer-attempt, exact outage-duration or causal performance claims.</footer>
     </main>

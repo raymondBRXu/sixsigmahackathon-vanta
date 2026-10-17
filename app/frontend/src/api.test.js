@@ -9,6 +9,8 @@ describe('deployment-relative API URLs', () => {
     base.href = 'https://example.test/content/dockwatch/'
     document.head.append(base)
     expect(apiUrl('snapshot', { source: 'normal', cursor: 377 })).toBe('https://example.test/content/dockwatch/api/snapshot?source=normal&cursor=377')
-    expect(apiUrl('charts/history.svg', { source: 'normal', start: 0, end: 377 })).toContain('/content/dockwatch/api/charts/history.svg?')
+    const chart = new URL(apiUrl('charts/history.svg', { source: 'normal', hour: 9, start_date: '2026-09-03', end_date: '2026-09-28' }))
+    expect(chart.pathname).toBe('/content/dockwatch/api/charts/history.svg')
+    expect(chart.searchParams.get('start_date')).toBe('2026-09-03')
   })
 })

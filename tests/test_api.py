@@ -29,6 +29,7 @@ def test_configuration_and_health_match_existing_demo(client):
     assert config["default_cursor"] == 377
     assert config["timestamps"][377] == "2026-09-28T09:00:00-04:00"
     assert len(config["timestamps"]) == 600
+    assert config["service_dates"] == api.SETTINGS["service_dates"]
     assert len(config["stations"]) == 20
     assert config["source"] == {"id": "normal", "label": "normal.csv", "observations": 12000}
     assert config["stations"][0]["display_name"] == "Robert Purcell Community Center"
@@ -99,6 +100,94 @@ def test_no_fleet_requirement_for_uploads_and_empty_upload_is_missing(client):
     assert all(row["status"] == "missing" for row in result["stations"])
 
 
+@pytest.mark.parametrize("cursor", [0, 7, 8, 15])
+def test_realtime_returns_named_stations_and_scheduled_window(client, cursor):
+    response = client.get("/api/realtime", params={"cursor": cursor})
+    assert response.status_code == 200
+    result = response.json()
+    timestamps = [stamp.isoformat() for stamp in api.PLAN[max(0, cursor - 7):cursor + 1]]
+    assert result["timestamp"] == api.PLAN[cursor].isoformat()
+    assert result["window_size"] == 8
+    assert result["timestamps"] == timestamps
+    assert result["reference_lines"] == {"center": 15, "upper": 24, "lower": 6}
+    assert [station["station_id"] for station in result["stations"]] == api.STATIONS["station_id"].tolist()
+    assert len(result["stations"]) == 20
+    assert result["stations"][0]["display_name"] == "Robert Purcell Community Center"
+    expected = api._builtin("normal").set_index(["station_id", "timestamp"])["bikes"]
+    for station in result["stations"]:
+        assert station["display_name"] == api.NAMES[station["station_id"]]
+        assert station["capacity"] == 30
+        assert [row["timestamp"] for row in station["history"]] == timestamps
+        assert [row["bikes"] for row in station["history"]] == [
+            expected.loc[station["station_id"], pd.Timestamp(stamp)] for stamp in timestamps
+        ]
+
+
+def test_realtime_appends_drops_oldest_and_rewinds_deterministically(client):
+    before = client.get("/api/realtime", params={"cursor": 7}).json()
+    after = client.get("/api/realtime", params={"cursor": 8}).json()
+    assert after["timestamps"] == before["timestamps"][1:] + [api.PLAN[8].isoformat()]
+    for old_station, new_station in zip(before["stations"], after["stations"]):
+        assert new_station["history"][:-1] == old_station["history"][1:]
+    assert client.get("/api/realtime", params={"cursor": 7}).json() == before
+
+
+def test_realtime_upload_keeps_missing_slots_all_stations_and_current_cutoff(client):
+    source = upload_csv(client, "timestamp,station_id,bikes\n"
+                        "2026-08-24T07:00:00-04:00,S01,10\n"
+                        "2026-08-24T09:00:00-04:00,S01,30\n")
+    result = client.get("/api/realtime", params={"source": source, "cursor": 1}).json()
+    assert result["timestamps"] == [stamp.isoformat() for stamp in api.PLAN[:2]]
+    assert len(result["stations"]) == 20
+    assert [row["bikes"] for row in result["stations"][0]["history"]] == [10, None]
+    assert all(row["bikes"] is None for station in result["stations"][1:] for row in station["history"])
+    assert all(row["timestamp"] <= result["timestamp"]
+               for station in result["stations"] for row in station["history"])
+    advanced = client.get("/api/realtime", params={"source": source, "cursor": 2}).json()
+    assert [row["bikes"] for row in advanced["stations"][0]["history"]] == [10, None, 30]
+    assert advanced["reference_lines"] == {"center": 15, "upper": 24, "lower": 6}
+    assert client.get("/api/realtime", params={"source": source, "cursor": 1}).json() == result
+
+
+def test_realtime_empty_upload_has_eight_missing_slots_for_every_station(client):
+    source = upload_csv(client, "timestamp,station_id,bikes\n")
+    result = client.get("/api/realtime", params={"source": source, "cursor": 15}).json()
+    assert len(result["stations"]) == 20
+    assert len(result["timestamps"]) == 8
+    assert all(len(station["history"]) == 8 for station in result["stations"])
+    assert all(row["bikes"] is None for station in result["stations"] for row in station["history"])
+
+
+def test_realtime_source_switch_preserves_window_and_fixed_references(client):
+    normal = client.get("/api/realtime", params={"source": "normal", "cursor": 377}).json()
+    disrupted = client.get("/api/realtime", params={"source": "disruption", "cursor": 377}).json()
+    assert normal["timestamps"] == disrupted["timestamps"]
+    assert normal["reference_lines"] == disrupted["reference_lines"] == {"center": 15, "upper": 24, "lower": 6}
+    assert normal["stations"] != disrupted["stations"]
+    assert client.get("/api/realtime", params={"source": "normal", "cursor": 377}).json() == normal
+
+
+def test_realtime_window_size_is_fixed_and_not_a_query_parameter(client):
+    schema = client.get("/api/openapi.json").json()["paths"]["/api/realtime"]["get"]
+    assert {parameter["name"] for parameter in schema["parameters"]} == {"source", "cursor"}
+    response = client.get("/api/realtime", params={"cursor": 15, "window_size": 1})
+    assert response.status_code == 200
+    assert response.json()["window_size"] == 8
+    assert len(response.json()["timestamps"]) == 8
+
+
+@pytest.mark.parametrize("params,status", [
+    ({"cursor": -1}, 422),
+    ({"cursor": 600}, 422),
+    ({"cursor": 1.5}, 422),
+    ({"source": "unknown"}, 404),
+])
+def test_realtime_invalid_queries_return_client_errors(client, params, status):
+    response = client.get("/api/realtime", params=params)
+    assert response.status_code == status
+    assert response.json()["detail"]
+
+
 @pytest.mark.parametrize("path,params", [
     ("/api/config", {"source": "../normal.csv"}),
     ("/api/snapshot", {"cursor": -1}),
@@ -159,4 +248,96 @@ def test_chart_endpoints_render_svg_without_leaking_figures(client, chart):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/svg+xml")
     assert b"<svg" in response.content and b"</svg>" in response.content
+    assert not api.plt.get_fignums()
+
+
+def test_same_hour_analysis_upload_matches_known_answer_and_metadata(client):
+    content = "timestamp,station_id,bikes\n" + "".join(
+        f"{day}T09:00:00-04:00,S01,{bikes}\n"
+        f"{day}T08:00:00-04:00,S01,30\n"
+        f"{day}T09:00:00-04:00,S02,0\n"
+        for day, bikes in zip(api.SETTINGS["service_dates"][:5], [10, 12, 11, 13, 14])
+    )
+    source = upload_csv(client, content)
+    params = {"source": source, "cursor": 62, "station_id": "S01", "hour": 9,
+              "start_date": "2026-08-24", "end_date": "2026-08-28"}
+    response = client.get("/api/analysis", params=params)
+    assert response.status_code == 200
+    result = response.json()
+    assert {key: result[key] for key in ("hour", "start_date", "end_date")} == {
+        "hour": 9, "start_date": "2026-08-24", "end_date": "2026-08-28",
+    }
+    assert result["timestamp"] == "2026-08-28T09:00:00-04:00"
+    assert result["summary"]["limits"] == pytest.approx({
+        "cl": 12, "lcl": 8.01063829787234, "ucl": 15.98936170212766,
+        "mr_mean": 1.5, "sigma": 1.3297872340425534, "n": 5, "pairs": 4,
+    })
+    assert result["summary"]["hour"] == 9
+    assert [row["bikes"] for row in result["history"]] == [10, 12, 11, 13, 14]
+    assert all("T09:00:00" in row["timestamp"] for row in result["history"])
+    chart = client.get("/api/charts/history.svg", params=params)
+    assert chart.status_code == 200
+    assert "Scheduled service date" in chart.text and "CL = 12.00" in chart.text
+    assert not api.plt.get_fignums()
+
+
+def test_same_hour_defaults_and_demo_checkpoint(client):
+    result = client.get("/api/analysis", params={"cursor": 377, "hour": 9}).json()
+    assert result["start_date"] == "2026-08-24" and result["end_date"] == "2026-09-28"
+    assert result["summary"]["planned"] == 26
+    result = client.get("/api/analysis", params={"cursor": 377, "hour": 9, "start_date": "2026-09-22"}).json()
+    assert [row["bikes"] for row in result["history"]] == [17, 23, 19, 15, 17]
+    assert result["summary"]["limits"] == pytest.approx({
+        "cl": 18.2, "mr_mean": 4, "sigma": 3.546099290780142,
+        "lcl": 7.561702127659572, "ucl": 28.838297872340426, "n": 5, "pairs": 4,
+    })
+
+
+def test_same_hour_missing_date_breaks_pairs_and_future_slot_is_not_missing(client):
+    source = upload_csv(client, "timestamp,station_id,bikes\n"
+                        "2026-08-24T09:00:00-04:00,S01,10\n"
+                        "2026-08-25T09:00:00-04:00,S01,12\n"
+                        "2026-08-27T09:00:00-04:00,S01,13\n"
+                        "2026-08-28T09:00:00-04:00,S01,14\n")
+    result = client.get("/api/analysis", params={"source": source, "cursor": 61, "hour": 9}).json()
+    assert [row["bikes"] for row in result["history"]] == [10, 12, None, 13]
+    assert result["summary"]["planned"] == 4
+    assert result["summary"]["n"] == 3
+    assert result["summary"]["pairs"] == 1
+    assert result["summary"]["limits"]["mr_mean"] == 2
+    assert all(row["timestamp"] < result["timestamp"] for row in result["history"])
+    result = client.get("/api/analysis", params={"source": source, "cursor": 62, "hour": 9}).json()
+    assert [row["bikes"] for row in result["history"]] == [10, 12, None, 13, 14]
+    assert result["summary"]["planned"] == 5 and result["summary"]["pairs"] == 2
+
+
+@pytest.mark.parametrize("params,message", [
+    ({"hour": 6}, "operating hour"),
+    ({"hour": 24}, None),
+    ({"hour": 8.5}, None),
+    ({"hour": 9, "start_date": "2026-08-30", "end_date": "2026-08-28"}, "start_date"),
+    ({"hour": 9, "end_date": "2026-09-29"}, "playback date"),
+    ({"hour": 9, "start_date": "2026-08-32"}, "ISO date"),
+    ({"hour": 9, "start_date": "2026-08-24T09:00:00"}, "ISO date"),
+    ({"start_date": "2026-08-24"}, "Select an hour"),
+])
+@pytest.mark.parametrize("path", ["/api/analysis", "/api/charts/history.svg"])
+def test_same_hour_invalid_queries_are_client_errors(client, params, message, path):
+    response = client.get(path, params={"cursor": 377, **params})
+    assert response.status_code == 422
+    if message:
+        assert message in response.json()["detail"]
+
+
+def test_same_hour_empty_future_selection_renders_without_counting_future_data(client):
+    params = {"cursor": 0, "hour": 9}
+    response = client.get("/api/analysis", params=params)
+    assert response.status_code == 200
+    result = response.json()
+    assert result["history"] == []
+    assert result["summary"]["planned"] == result["summary"]["n"] == 0
+    assert result["summary"]["cl"] is None and result["summary"]["limits"] is None
+    assert "No elapsed" in result["summary"]["reason"]
+    chart = client.get("/api/charts/history.svg", params=params)
+    assert chart.status_code == 200 and "<svg" in chart.text
     assert not api.plt.get_fignums()

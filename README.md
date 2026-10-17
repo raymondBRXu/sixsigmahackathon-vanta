@@ -31,14 +31,15 @@ Vite proxies `/api` and `/health` to port 8000. Production uses relative URLs, s
 ## Dashboard workflow
 
 1. Start with **Normal operations**, **S01**, Sep 28, 2026 at 09:00 EDT.
-2. On **Operations**, play/pause the shared clock, step by one scheduled hour, or scrub the timeline. The network cards, map, action queue and selected-station details use the same instant.
+2. Navigate between **Overview** and **View by Station**. Play/pause the shared clock, step by one scheduled hour, or scrub the timeline. **Overview** shows network cards, map, action queue and selected-station details at the same instant. **View by Station** shows all 20 station charts, each with the latest eight scheduled hourly slots and fixed reference lines at 15 (center), 24 (upper) and 6 (lower) bikes. Playback adds one hourly slot every two seconds. Each grid card stays 336 × 275 pixels with a fixed 0–30 bike scale; the grid wraps as space changes.
 3. Hover a map marker for inventory, free docks, reading age and action. **Double-click** a marker to select its station. The map camera stays put as readings update. The sidebar is an alternative station selector.
 4. The action queue lists station IDs and names. Empty/full stations come first; low/high stock and reinspection follow. Suggested amounts target half capacity; they are not a balanced transport plan.
-5. On **Analysis**, playback pauses. Select an inclusive time interval using the two range handles. The Individuals chart and its observed/CL/LCL/UCL cards use all scheduled hourly readings in that interval, through the shared clock.
-6. The two lower plots show the shared clock's current day: the selected station's inventory and all stations' occupancy by elapsed hour. They are independent of the selected Individuals interval.
-7. Upload your own observations or download the current snapshot from the sidebar/Operations controls.
+5. Click **History** on a station card to pause playback and open that station's Individuals chart in a dialog. Each opening starts at **07:00** and the full configured service-date range, independently of the shared clock and sidebar station. Choose an **Operating hour** and an inclusive **date range** using the two handles or date selectors. The chart plots one count per service date at that hour, with observed/CL/LCL/UCL cards for the selected series. Close the dialog or press **Escape** to return to the same grid or enlarged chart, with playback paused and focus returned to its **History** button.
+6. Upload your own observations from the sidebar or download the current snapshot from **Overview**.
 
-The original baseline approval, same-hour SPC and automated alarm features are not part of this version. See [MVP](docs/MVP.md) and [verified demo checkpoints](demo/README.md).
+Click a station chart's body, or focus the chart and press **Enter** or **Space**, to show that station in a larger chart. The shared clock continues to update its eight-slot window with the same 15/24/6 reference lines. Choose **Back to all stations** or press **Escape** to restore the 20-card grid. The separate **History** button opens the historical chart without changing the grid or enlarged view underneath.
+
+**View by Station** uses the existing synthetic playback. Its fixed lines are configured inventory references, independent of the estimated Individuals limits in **History**. Missing readings stay gaps; fewer than eight available slots are not padded with invented observations. Baseline approval and automated alarm features are not part of this version. See [MVP](docs/MVP.md) and [verified demo checkpoints](demo/README.md).
 
 ## Inputs and interpretation
 
@@ -54,11 +55,11 @@ Uploads are temporary, limited to 5 MiB, and stored only in the Python process's
 | Low/high stock | Strictly below 20% or above 80% occupancy |
 | Suggested move | Half-capacity target minus current bikes for an actionable station |
 | Hourly net change | Difference between consecutive one-hour readings in the same local service day |
-| Individuals CL | Mean of valid counts in the selected interval |
-| MR and sigma estimate | Mean absolute adjacent-hour difference, divided by `d2 = 1.128` |
+| Individuals CL | Mean of valid counts for the selected station/hour and date range |
+| MR and sigma estimate | Mean absolute difference at the selected hour between consecutive scheduled service dates, divided by `d2 = 1.128` |
 | Estimated LCL/UCL | CL minus/plus three estimated sigma |
 
-Moving ranges and lines exclude missing hours and overnight gaps. Limits are not clipped to physical capacity. Constant data, a single reading or no adjacent valid pair retain the observed values and mean but have no estimated UCL/LCL. Limits are exploratory: daily patterns and serial dependence can affect their interpretation. These charts do not establish stability, trigger alarms, measure failed customer attempts, give exact outage durations, or prove intervention effects.
+The Individuals chart preserves missing scheduled readings as gaps in its lines and moving ranges. Non-service dates, such as weekends in the supplied calendar, are not missing readings. Limits are not clipped to physical capacity. Constant data, a single reading or no adjacent valid pair retain the observed values and mean but have no estimated UCL/LCL. Limits are exploratory: bounded inventory and serial dependence can affect their interpretation. These charts do not establish stability, trigger alarms, measure failed customer attempts, give exact outage durations, or prove intervention effects.
 
 The plain statistical functions and plot layering follow the course `sysen/functions/functions_process_control.py` approach, with the deterministic constant documented by [NIST Individuals charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm). [Data codebook](data/README.md) explains every field, generator and assumption.
 
@@ -81,7 +82,9 @@ print(snapshot_metrics(state))
 
 `individual_limits(values, timestamps=None)` returns `cl`, `lcl`, `ucl`, `mr_mean`, `sigma`, `n`, and `pairs`. Optional timestamps restrict moving ranges to same-day adjacent hours. It raises `ValueError` when limits cannot be estimated.
 
-`station_history(observations, settings, station_id, start_time, end_time)` returns an hourly DataFrame and a summary containing `limits` (nullable), `cl`, `n`, `planned`, `pairs`, and `reason`. Library callers choose their own cutoff; the HTTP API enforces `end <= cursor`.
+`station_hour_history(observations, settings, station_id, start_date, end_date, hour, as_of_time)` returns one scheduled observation per service date at the selected hour, capped at `as_of_time`, and a summary containing `hour`, `limits` (nullable), `cl`, `n`, `planned`, `pairs`, and `reason`. Dates are inclusive ISO dates (`YYYY-MM-DD`).
+
+`station_history(observations, settings, station_id, start_time, end_time)` retains the earlier all-hour interval behavior for library/API compatibility. Optional timestamps in `individual_limits` still restrict pairs to adjacent hours within a day; the new date-series function supplies its fully reindexed same-hour sequence to the estimator without that hourly restriction.
 
 `load_bundle(data_dir, source=None, check_fleet=False)` returns validated observations, stations and settings; the default CSV is `normal.csv`. Data files are explicit inputs, not bundled into the wheel. `snapshot_at` returns every configured station with exact-current counts and separately labeled last readings. `snapshot_metrics` returns the rates, counts and coverage above. `hourly_changes` adds `net_change` without bridging gaps.
 
@@ -92,14 +95,17 @@ All endpoints are documented in `/api/docs`. Index parameters refer to the order
 | Endpoint | Parameters / output |
 |---|---|
 | `GET /health` | Service health |
-| `GET /api/config` | `source=normal`; scenario list, stations, timeline and source metadata |
+| `GET /api/config` | `source=normal`; scenario list, stations, hourly timeline, `service_dates`, `hours` and source metadata |
 | `GET /api/snapshot` | `source`, `cursor`; current station rows, metrics and sorted queue |
-| `GET /api/analysis` | `source`, `cursor`, `station_id`, `start`, `end`; inclusive history and Individuals summary |
-| `GET /api/charts/history.svg` | Same selection as analysis; original plotnine Individuals chart |
+| `GET /api/realtime` | `source`, `cursor`; all stations with up to eight scheduled hourly slots ending at the cursor, missing values and fixed 15/24/6 reference lines |
+| `GET /api/analysis` | `source`, `cursor`, `station_id`, `hour`, `start_date`, `end_date`; inclusive same-hour date history and Individuals summary |
+| `GET /api/charts/history.svg` | Same selection as analysis; date-axis plotnine Individuals chart |
 | `GET /api/charts/inventory.svg` | `source`, `cursor`, `station_id`; selected station today |
 | `GET /api/charts/heatmap.svg` | `source`, `cursor`; all-station occupancy today |
 | `GET /api/snapshot.csv` | `source`, `cursor`; downloadable current snapshot |
 | `POST /api/uploads` | Multipart `file`; validates CSV and returns configuration with a temporary source ID |
+
+The `cursor` remains an hourly timeline index. The **History** dialog always uses the final timeline index so all data are available, independent of the shared playback clock. Other API callers can still use an earlier cursor to cap readings; date selections must not extend beyond that cursor’s local date. Omitting `hour` retains the earlier `start`/`end` timeline-index analysis for compatibility. The inventory and heatmap SVG endpoints remain available to API callers; the History dialog displays the Individuals chart only.
 
 Built-in source IDs are `normal`, `disruption`, `edge_cases`. Use the returned source ID for uploaded observations. Invalid selections return HTTP 422; unknown/expired sources return 404. Missing values serialize to JSON `null`.
 
@@ -112,7 +118,7 @@ npm run build --prefix app/frontend
 uv build
 ```
 
-Tests cover known-answer statistics, constant/insufficient data, missing and overnight gaps, input validation, API parity, clock cutoffs and frontend state transitions. The independent arithmetic fixture `[10,12,11,13,14]` gives CL 12, MR mean 1.5, LCL 8.010638298 and UCL 15.989361702.
+Tests cover known-answer statistics, constant/insufficient data, missing scheduled readings, service-date gaps, legacy hourly gaps, input validation, API parity, clock cutoffs and frontend state transitions. The independent arithmetic fixture `[10,12,11,13,14]` gives CL 12, MR mean 1.5, LCL 8.010638298 and UCL 15.989361702.
 
 ## Package and deploy
 
