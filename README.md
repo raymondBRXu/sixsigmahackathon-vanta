@@ -10,6 +10,8 @@ is also available. Anonymous page and API access were checked on October 17, 202
 instructions, input/parameter reference, statistical methods, full data codebook,
 API/library functions and reproducible demonstrations in one document.
 
+**[Demo Documentation](demo/README.md)** — demo README, walks. through the entire dashboard for a quick start
+
 A React dashboard and Python API for a synthetic Ithaca bikeshare network. Inspect current inventory, find empty/full stations, review manual inventory actions, and explore hourly history with Individuals charts.
 
 **20 fictional stations · 300 bikes docked or in transit · hourly snapshots · two synthetic scenarios.** No live telemetry or automated dispatch. The React dashboard retains its same-hour Individuals calculations and optional eight-rule diagnosis.
