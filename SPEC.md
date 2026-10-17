@@ -1,157 +1,239 @@
-# SPEC: Six Sigma Hackathon team project
+# SPEC: DockWatch — Team Vanta
 
-What your tool IS. Your agent reads this before every task. Where the code and this file
-disagree, the code is the bug: change this file first, then the code.
-
-Most of this page is already decided by the event and the [rubric](docs/criteria.md).
-**Only the `FILL IN` lines change, and you do not have to write them by hand:** describe your app and ask your agent to update them. They depend on the prompt your team picks at kickoff
-(prompts are secret until then, see [`docs/prompts.md`](docs/prompts.md)) and on your team.
-The examples after each `FILL IN` show the shape of an answer. They are not hints about the prompts.
+DockWatch helps an Ithaca-area bikeshare supervisor inspect station inventory,
+prioritize manual inventory actions, and investigate historical patterns.
+This specification describes the current React/FastAPI implementation on `main`;
+it supersedes earlier project plans. Proposed enhancements are not implemented features.
+The structure follows the [organizer's SPEC template](https://github.com/timothyfraser/sixsigmahackathon/blob/main/SPEC.md)
+and [rubric](docs/criteria.md).
 
 ## 1. Team and prompt
-- **Team name:** Team Vanta. Product: DockWatch. Members: Raymond Xu, Chi Zhang, Siyu Yao, Ruoxi Wang, Huiyu Zhu.
-- **Track:** On-campus (24 hours), October 16–17, 2026. Submit October 17 by 1 PM America/New_York; showcase 2–3 PM.
-- **Prompt we chose:** Urban Systems — Bikeshare Fleets ([Devpost](https://six-sigma-hackathon.devpost.com/)); no numeric identifier was published. Track station availability and support informed rebalancing.
+
+- **Team name:** Team Vanta. Product: DockWatch.
+- **Members:** Raymond Xu, Chi Zhang, Siyu Yao, Ruoxi Wang, Huiyu Zhu.
+- **Track:** On-campus, 24-hour hackathon, October 16–17, 2026.
+- **Prompt we chose:** Urban Systems — Bikeshare Fleets, as recorded by the team from [Devpost](https://six-sigma-hackathon.devpost.com/). A numeric prompt identifier is not recorded; do not invent one.
 - **Our public repo:** https://github.com/raymondBRXu/sixsigmahackathon-vanta
 
 ## 2. User and use case (rubric: scope 5, user and use case 5)
-- **User:** The supervisor of a fictional bikeshare network in the Ithaca, New York area, reviewing hourly station snapshots collected automatically.
-- **Decision the tool helps them make, and when:** At each hourly review, identify empty/full or low/high-stock stations, inspect inventory patterns over a selected time interval, and prioritize bike replenishment or removal.
-- **Why this matches the prompt:** Uses directly observable station inventory to reveal where and when service is unavailable and to provide explained rebalancing suggestions without assuming access to unobserved customer attempts.
+
+- **User:** A bikeshare operations supervisor responsible for station inventory in the Ithaca, New York area.
+- **Decision the tool helps them make, and when:** At an hourly inventory review, identify stations needing attention and inspect suggested replenishment/removal quantities. During a historical review, compare one station at the same operating hour across dates and investigate unusual patterns.
+- **Why this matches the prompt:** It uses observable docked-bike counts to show station service availability and support manual inventory decisions, without assuming that unobserved customer attempts can be measured.
+
+The demonstration has 20 fictional stations, 30 positions per station (600 total),
+and 300 bikes docked or in transit. Locations are defined in `data/stations.json`
+around Cornell, Collegetown, downtown Ithaca and surrounding neighborhoods,
+including Stewart Park. They are simulated facilities, not a real operating network.
+The UI's current readings are synthetic playback, not a live telemetry feed.
 
 ## 3. Inputs (rubric: minimal inputs 5)
-Only what this user can actually measure or already knows. Fewer is better; every input a user
-cannot measure costs points.
 
 | Input | Type and units | Where the user gets it |
 |---|---|---|
-| Hourly inventory CSV: `timestamp`, `station_id`, `bikes` | Timestamp with timezone; station identifier; integer bikes | Automatic station snapshot once per station per scheduled hour |
-| Station configuration: `station_id`, `name`, `area`, `type`, `latitude`, `longitude`, `capacity` | Identifier, display name, area/type labels, WGS84 decimal-degree coordinates, positive integer positions | Configured once for 20 fictional Ithaca-area stations; field workers do not enter coordinates at every inspection |
+| `timestamp` | Timezone-aware timestamp, on a scheduled whole hour | Automatic station snapshot clock |
+| `station_id` | Station identifier matching configuration | Station inventory system |
+| `bikes` | Integer docked-bike count, 0 through capacity | Station dock sensors or a counted inventory snapshot |
+| `data/stations.json` | IDs, names, area/type labels, latitude/longitude in decimal degrees, integer capacity | One-time station configuration |
+| `data/settings.json` | Service dates, operating hours and timezone | Collection schedule configured by the operator |
 
-Require 0 <= bikes <= capacity and one record per station/scheduled hourly slot. Preserve
-missing readings as missing, never zero; reject invalid and duplicate rows. MVP capacity
-is fixed at 30 positions for each of 20 stations; the fleet totals 300 bikes.
-The synthetic ride model conserves docked plus in-transit bikes at 300, with
-positive trip durations and continuous overnight/weekend movements. Docked totals
-can be below 300, so network dock occupancy varies (600 total positions). Bundled
-CSV validation rejects docked totals above 300; event-log replay separately verifies
-fleet conservation. Snapshot CSVs alone do not prove conservation. Stations are
-open, and all bikes/docks usable, so free docks = capacity - bikes.
-Faults and closures require an explicit future schema extension. Use actual observation
-times; the demo and upload contract are exactly on scheduled hours. Compare matched scheduled hours and show missing coverage.
+CSV observations contain only `timestamp,station_id,bikes`; coordinates and capacity
+are not repeated in every observation. The bundled calendar has 40 weekdays,
+August 24–October 16, 2026, with 15 readings per day from 07:00 through 21:00,
+in `America/New_York`. A complete scenario has 12,000 rows.
 
-Geographic setting: Ithaca, New York and nearby areas shown in the team's reference
-screenshot, rather than a strict municipal-boundary model. Place 20 fictional stations
-around Downtown Ithaca, the Cornell area, the waterfront/Stewart Park area, Cayuga
-Heights, East Ithaca and South Hill. Exact station locations will be set and visually
-checked during data preparation; do not claim they are existing bikeshare facilities.
-Use the same station IDs and coordinates in all scenarios. The dashboard identifies
-the network as synthetic; coordinates locate stations but do not change
-the statistical formulas or imply measured local demand.
+Reject invalid counts, unknown stations, invalid/off-schedule timestamps and duplicate
+station/time keys. Missing observations remain missing, never zero. All bikes and
+docks are assumed usable and stations open; free docks therefore equal capacity
+minus bikes. Faults and closures would need additional input fields.
+
+CSV uploads use the configured stations/calendar, are limited to 5 MiB, and are
+stored temporarily in process memory (at most eight uploaded sources). They do not
+have the synthetic fleet's 300-bike constraint. Bundled data checks reject docked
+totals above 300; independent event replay checks that docked plus in-transit bikes
+remain 300. Snapshot CSVs alone cannot establish full fleet conservation.
 
 ## 4. The statistics, and why (rubric: valid QC analysis 25)
-Say the method in words before any code exists. Load the `stats-first-steering` skill first.
-- **Method:** Descriptive snapshot metrics plus an exploratory Individuals (I) chart for one station at one selected operating hour across an inclusive service-date range. Each point is that station's observed bike count at the selected hour on one date, not an hourly average or net change. For valid snapshots, occupancy = bikes/capacity; empty proportion = count(bikes=0)/N; full proportion = count(bikes=capacity)/N; two-way availability = count(0<bikes<capacity)/N. Report N and observation coverage. Hourly net change remains current bikes minus previous bikes only for adjacent, one-hour-separated observations within the same service day. For the Individuals chart, CL=mean(valid x), MR_i=abs(x_i-x_(i-1)) at the same selected hour on consecutive scheduled service dates, sigma_hat=mean(MR)/1.128, LCL=CL-3*sigma_hat, UCL=CL+3*sigma_hat. Non-service days do not create missing observations; missing scheduled readings break moving-range pairs. Recalculate estimates when station, hour or date range changes. The Operations realtime station charts additionally show each station’s latest eight scheduled hourly slots against user-specified fixed lines: center 15, upper 24, lower 6 bikes. These are configured inventory references, not limits estimated from the window. There is no baseline approval, frozen monitoring period, automated SPC alarm or crossing count.
-- **Why it fits the use case:** The measured unit is a bike count at a scheduled inspection, not a customer success/failure. Comparing the same operating hour across dates separates the chart from within-day inventory patterns. Bounded counts and serial dependence can still affect interpretation; the chart does not establish process stability or a calibrated false-alarm rate.
-- **Assumptions and how the tool handles them:** All stations are open with usable bikes/docks and positive fixed capacity. Reindex the selected date range to the planned service dates at the selected hour, preserve missing readings, and never bridge a missing scheduled reading when estimating moving ranges. At least one adjacent valid pair and positive moving-range variation are required for UCL/LCL. Still show observed data and its mean when limits cannot be estimated. Do not clip I-chart limits to physical capacity or confuse them with inventory targets. Interpretation and investigation belong to the user. Station History reads the full configured collection timeline independently of playback. Its date range defaults to the full service-date range; narrowing it selects the observations used for estimates. The API retains explicit cutoff support for other callers. Existing all-hour library/API calls remain available for compatibility; the dashboard uses the same-hour date series.
-- **Known-answer check:** Five-station snapshot fixture with capacity 30 and bikes [0,0,9,15,30] gives empty=40%, full=20%, two-way availability=40%, and mean occupancy=36%. A single-station sequence [10,12,11,13,14] at one selected hour on five consecutive scheduled service dates gives CL=12, MR=[2,1,2,1], MR_bar=1.5, sigma_hat=1.329787234, LCL=8.010638298 and UCL=15.989361702. Test station/hour/date isolation, no future data, missing scheduled dates, non-service-day gaps, constant data, one observation and invalid input. Source: course sysen/functions/functions_process_control.py (moving-range estimator and plot layers), with deterministic d2=1.128 from [NIST Individuals charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm).
 
-Fixed for every team:
-- Each statistic lives in **one plain, tested function** (`app/dockwatch/qc.py` and `app/dockwatch/patterns.py`). The API, app or
-  package only calls it and displays the result. No statistics inside UI code.
-- Every statistic has a test against a known answer and a degenerate case (constant data, n = 1, missing values).
-- You can explain every number the tool prints. If you cannot, it is not done.
+- **Method:** Descriptive station-inventory measures and an exploratory Individuals (I) chart of one station's bike count at one selected operating hour across service dates. Optional Diagnosis checks eight explicitly defined patterns in the full same-hour history.
+- **Why it fits the use case:** Counts are directly observable, and matching operating hours avoids pooling different times of day into one chart. The results support investigation of inventory behavior rather than estimates of customer failure rates.
+- **Assumptions and how the tool checks them:** Input validation checks the count bounds, station identities, timestamps and uniqueness. Scheduled grids expose missing observations and coverage. Statistical independence, normality and process stability are not automatically established: bounded inventory, serial dependence and synthetic fixture selection limit interpretation. Diagnosis uses the same full series for estimation and detection, including excursions; results are retrospective exploratory matches, not calibrated prospective SPC alarms. A validated stable reference period would be needed before making that stronger claim.
 
-### Optional History diagnosis
+### Inventory measures and manual action policy
 
-Diagnosis is an explicit toggle, off each time History opens. Enabling it selects
-the full service-date range and disables every range control until toggled off.
-The selected station/hour remains the analysis unit. Compute CL and sigma once
-from that full sequence using the existing Individuals estimator, then scan all
-eight course-image rules: T1 one point strictly beyond 3 sigma; T2 at least 2 of
-3 beyond 2 sigma on the same side; T3 at least 4 of 5 beyond 1 sigma on the same
-side; T4 eight strictly on the same side of CL; T5 six strictly increasing or
-decreasing; T6 fifteen within inclusive +/-1 sigma; T7 eight outside +/-1 sigma
-with both sides represented; T8 fourteen points with thirteen alternating nonzero differences.
-Missing planned readings interrupt every window; non-service days do not.
-Equal observations break trends/alternation; equality with CL breaks T4.
-Unavailable estimates or insufficient contiguous readings are explicit, not a
-passed test. Keep raw windows and contributing indices distinct from the point
-where the final observation confirms a rule. These are exploratory pattern
-matches, not calibrated alarms or diagnoses of their physical cause.
+Let `N` be the number of currently observed stations and `P` the planned stations.
 
-The History chart renders as interactive React SVG with hover/focus information
-for every observed point, retaining date selection, gaps, CL and unclipped limits.
-Diagnosis flags the union of all contributing points; one tab per detected rule
-selects its contributing points in red and a short English explanation above the
-chart. Multiple matches of one rule share a tab, and overlapping windows do not
-duplicate points. Changing hour recomputes diagnosis while retaining the lock;
-closing History resets diagnosis. Python owns all rule decisions; React only
-renders API results. Existing static SVG endpoints remain compatible.
+| Output | Calculation / interpretation |
+|---|---|
+| Occupancy | `bikes / capacity` at an observed station |
+| Free docks | `capacity - bikes`, in positions |
+| Empty proportion | Number of observed stations with `bikes = 0`, divided by `N` |
+| Full proportion | Number of observed stations with `bikes = capacity`, divided by `N` |
+| Two-way availability | Number with `0 < bikes < capacity`, divided by `N`; a proportion of stations, not customers |
+| Observation coverage | `N / P`; show counts alongside percentages |
+| Mean occupancy | Mean of observed station occupancy fractions |
+| Hourly net change | Current count minus previous count, only for consecutive one-hour readings within the same local service day |
+
+With no observed stations, inventory rates are unavailable rather than zero.
+Missing/stale counts do not become empty/full observations.
+
+The manual action policy is separate from statistical diagnosis: strictly below
+20% occupancy suggests adding bikes toward `floor(capacity/2)`; strictly above
+80% suggests removing bikes toward that target. At capacity 30, the target is 15:
+3 bikes suggests adding 12; 27 bikes suggests removing 12. Exactly 6 or 24 bikes
+does not trigger low/high-stock action. Rank fresh empty/full stations first,
+then low/high stock; missing/stale records require reinspection. Records at least
+60 minutes old are stale, measured against the displayed simulation time.
+Confirm counts before moving bikes. Independent station suggestions are not a
+balanced transport plan, optimized route, or automatically dispatched work order.
+
+### Individuals chart calculation
+
+For the selected station/hour/date range, use one observation `x_i` per planned
+service date. Compute:
+
+- `CL = mean(valid x_i)`.
+- `MR_i = abs(x_i - x_(i-1))`, only for adjacent scheduled service dates with both readings present.
+- `MR_bar = mean(valid MR_i)`; `sigma_hat = MR_bar / 1.128`.
+- `LCL = CL - 3 * sigma_hat`; `UCL = CL + 3 * sigma_hat`.
+
+Missing scheduled readings break moving-range pairs. Non-service weekends do not
+create missing readings. Do not clip limits to 0 or capacity. At least one valid
+adjacent pair and positive moving-range variation are needed to estimate limits;
+otherwise show observations and their mean, with the reason limits are unavailable.
+Changing hour or date range recalculates estimates.
+
+History is independent of the playback clock and can inspect the entire configured
+collection period. It defaults to all service dates and 07:00. This is historical
+review, even when playback is positioned at an earlier date. API callers can use
+an explicit cutoff, but the dashboard History uses the final timeline index.
+
+### Optional eight-rule Diagnosis
+
+Diagnosis defaults off. Enabling it selects and locks the full service-date range.
+Estimate CL and sigma once from that full station/hour series, then apply:
+
+| Rule | Pattern |
+|---|---|
+| T1 | One point strictly beyond 3 sigma |
+| T2 | At least two of three points strictly beyond 2 sigma on the same side |
+| T3 | At least four of five points strictly beyond 1 sigma on the same side |
+| T4 | Eight consecutive points strictly on the same side of CL |
+| T5 | Six strictly increasing or strictly decreasing points |
+| T6 | Fifteen consecutive points within inclusive ±1 sigma |
+| T7 | Eight consecutive points outside ±1 sigma, with both sides represented |
+| T8 | Fourteen points whose thirteen nonzero successive differences alternate direction |
+
+Missing readings interrupt rule windows. Ties break trends and alternation;
+equality with CL breaks T4. Insufficient data or unavailable limits are distinct
+from an evaluated rule with no matches. Store matching windows, contributing
+points and confirmation positions separately. One tab per matched rule highlights
+its contributing points in red; other matched points are outlined in amber.
+Overlapping windows do not duplicate highlighted points. Rules do not establish
+a physical cause or generate homepage inventory alerts.
+
+### Known-answer checks and implementation boundary
+
+- Counts `[0,0,9,15,30]` with capacity 30 give empty 40%, full 20%, two-way availability 40%, and mean occupancy 36%.
+- Same-hour readings `[10,12,11,13,14]` on five consecutive service dates give CL 12, moving ranges `[2,1,2,1]`, MR mean 1.5, sigma 1.329787234, LCL 8.010638298 and UCL 15.989361702.
+- Tests also cover constant data, one observation, absent readings, no adjacent pairs, scheduled/non-service gaps, station/hour/date isolation, API cutoffs, threshold equality, and planted/tied/missing rule sequences.
+
+Statistical calculations live in framework-free Python functions in
+`app/dockwatch/qc.py` and `app/dockwatch/patterns.py`; React renders API results.
+Every statistic must retain a known-answer test and relevant degenerate cases.
+The moving-range estimator uses `d2 = 1.128`, documented by
+[NIST Individuals charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm).
+The rule numbering follows the course image; exact rule definitions above are
+part of this specification. The team must be able to explain every displayed number.
 
 ## 5. Delivery (rubric: working tool 25)
-- **Stack:** React/Vite dashboard, MapLibre station map, FastAPI HTTP API and the independently installable `dockwatch` Python library. History uses interactive React SVG; Plotnine retains the static chart API. No Streamlit runtime.
-- **Implementation reference:** Adapt `demos/fastapi/` and `demos/reactfront/`. Reuse the previously verified framework-free data validation, statistics and plotnine functions. The React migration preserves the final interval-based dashboard behavior, not the superseded baseline-review design.
-- **Environment:** Python 3.12 with `uv.lock`; Node.js 22 or newer supported by the frontend engine constraint, with `package-lock.json`. All source comments and docstrings are English.
-- **Local run:** `./app/testme` installs locked dependencies, builds React, then serves the dashboard and API on one origin. A Vite development command is also documented.
-- **Deployment target:** Course Posit Connect, as one FastAPI application containing the built React assets and synthetic datasets. `app/manifestme` creates a self-contained bundle; `app/deployme` publishes only when explicitly invoked with configured credentials. Actual remote publication is separate from local verification.
-- **Plan:** [MVP](docs/MVP.md) and [implementation plan](docs/plan.md).
+
+- **Stack:** React/Vite dashboard and MapLibre map, served by FastAPI; independently installable `dockwatch` Python library. Interactive history is React SVG; Plotnine supports static chart endpoints.
+- **Starting demo:** FastAPI delivery structure from `demos/fastapi/`, with React frontend starter material from `demos/reactfront/`. The current integrated implementation is in `app/` and deploys as one FastAPI content item.
+- **Four-script contract:** `app/testme`, `app/manifestme`, `app/deployme`, and `app/README.md` provide local startup, manifest/bundle creation, publication and instructions.
+- **Local run:** From the repository root, `./app/testme`. Prerequisites are Python 3.12, uv, Node.js 22+ and npm. Dependencies are locked in `uv.lock` and `app/frontend/package-lock.json`. Initial dependency installation needs internet; map tiles also need internet, with a tile-free view available.
+- **Deployment requirement:** Publish to the course Posit Connect server with public access. `app/manifestme` prepares the self-contained bundle; `app/deployme` publishes with configured credentials. Public access and the demo must be verified after publication. Local tests/builds do not prove remote deployment; this SPEC does not claim a verified live deployment.
 
 ## 6. Outputs
-- **What the user sees:** An interactive Ithaca-area map with all 20 simulated stations, a scenario date/hour selector, and hoverable station markers showing bike count out of 30, free docks, observation time, status, and action suggestion. Missing/stale observations have their own marker states. Double-clicking a station marker or using the sidebar selects its Overview details. The action queue includes station IDs and names. Also show hourly inventory and occupancy, empty/full/two-way-available observation proportions with counts and coverage, station/hour heatmaps, adjacent-hour net changes, and a station detail chart. The dashboard has Overview / View by Station navigation, with no separate Operations or Analysis tabs. View by Station shows 20 fixed-size station charts. Every station card has a History button in its upper-right corner. History opens a modal for that station containing the former Analysis Individuals chart, its operating-hour selector, full service-date range slider and observed/CL/LCL/UCL metrics. Each opening defaults to 07:00 (or the first configured hour when 07:00 is unavailable) and the full date range. Opening History pauses playback, which remains paused after closing. Closing or Escape returns focus to the originating History button. The modal uses dates on the horizontal axis, one selected-hour reading per date, and estimated control limits. The clicked History station is independent of the sidebar station selection. Each chart shows up to the last eight scheduled observations through the current playback time, on a fixed 0–30 bike scale and eight horizontal slots. Advancing playback appends the new point and removes the oldest slot; before eight slots have elapsed, no data are invented. Missing readings stay gaps, and lines do not bridge overnight gaps. The existing two-second-per-scheduled-hour playback, pause, step, and scrub controls drive the page. These charts render as lightweight SVG in React from one batched API response; they use fixed inventory reference lines 15/24/6, separately from the estimated Individuals limits in Analysis. The History modal shows only the Individuals chart; the daily inventory and heatmap endpoints remain available to API callers. Insufficient or constant data keep their observations and mean visible with a short explanation. CSV uploads use the same validation and scheduled grid as bundled data. All demo data are labeled synthetic.
 
-Suggestions use the most recent eligible snapshot, never inferred customer demand. As an
-explicit demo policy, occupancy below 20% suggests adding bikes toward floor(capacity/2);
-above 80% suggests removing bikes toward that target. Exactly 20% or 80% does not trigger.
-For capacity 30, bikes=3 suggests add 12; bikes=27 suggests remove 12. The target is 15 bikes per station. These are business
-rules, not statistical conclusions. Missing records or records at least 60 minutes old
-require reinspection; even fresh counts are labeled with their timestamp and require
-confirmation before a physical move. Demo freshness uses the displayed scenario time.
-Rank fresh empty/full stations first, then low/high stock; include missing/stale stations for reinspection. No automatic dispatch or guaranteed route.
+| View/output | What the user sees and how to read it |
+|---|---|
+| Overview metrics | Current station availability, empty/full counts and proportions, and coverage. Always interpret inventory proportions alongside the observed denominator. |
+| Ithaca map | All 20 stations, colored by current inventory status. Popups show bikes, free docks, observation age and suggested action. Double-click a marker or use the sidebar to select a station. |
+| Red inventory alerts | Current empty/full stations. Selecting an alert opens its enlarged realtime chart. These are inventory conditions, not History rule matches. |
+| Action queue | Station, Bikes and State; empty/full first. Suggested move quantities are in map popups and snapshot exports, not a Move column in this queue. |
+| Selected-station details/export | Current bikes out of capacity, free docks, adjacent-hour net change, and a downloadable current snapshot CSV. |
+| View by Station | Twenty charts, each showing the latest eight scheduled hourly slots through playback time on a 0–30 bike scale. Click a chart to enlarge it. |
+| History | Same-hour counts across dates, observed/planned count, CL and estimated LCL/UCL, with interactive point details and optional Diagnosis tabs. |
 
-The Action queue displays Station, Bikes and State, with no Move column. Above
-the map, a single horizontal strip of red alerts replaces the old map heading.
-Each station with a current empty/full reading has one alert with its station
-identifier, name and status. The strip scrolls horizontally when necessary.
-The close control dismisses the continuous station/status condition; a recovery
-or change of critical state clears that dismissal so a new condition can appear.
-Changing source or seeking to a nonconsecutive time resets dismissed conditions.
-Missing/currently loading data never produce empty/full alerts from stale counts.
-Opening an alert goes directly to the station's enlarged realtime chart, retaining
-the current time and playing/paused state. It does not open historical diagnosis.
-Hovering or focusing a queue row, alert or map marker highlights that station
-across the visible elements, including a halo around its map marker. Dismissal
-does not change station readings or remove the station from the queue/map.
+The sidebar has one shared simulation clock: play/pause, previous/next hour and a
+full-range slider. Playback advances one scheduled hour every two seconds.
+Current views follow this clock; missing readings stay gaps, and realtime lines
+do not connect across overnight gaps. No observations are invented to fill an
+eight-slot chart. Fixed realtime reference lines at 6, 15 and 24 bikes are
+inventory references; although the center is labeled CL in the UI, it is not the
+historically estimated center line or control limits shown in History.
 
-Clicking any realtime station card opens a larger, single-station chart in the
-same View by Station page. The shared playback controls remain available, and the
-eight-slot window and fixed 15/24/6 lines continue updating. A Back to all
-stations button or Escape restores the 20 fixed-size cards and keyboard focus
-to the station chart that was opened. Focused charts support Enter or Space to enlarge. The separate History button opens history without also enlarging the realtime chart; Escape inside History closes only that modal.
+Opening History pauses playback and starts with Diagnosis off, 07:00 (or the first
+configured hour), and all dates. Changing hour recomputes results; enabling Diagnosis
+locks all dates, and disabling it unlocks date selection. Closing History returns
+to the originating view with playback paused and focus restored. The selected
+History station is independent of the sidebar selection.
 
-The shared simulation clock lives in the sidebar below the station selector:
-current date/time, Play/Pause, previous/next Step and the full-range timeline.
-There is only one clock in both Overview and View by Station. On narrow screens
-it spans the settings panel width. Loading/error states hide unavailable controls;
-History retains its existing pause behavior and separate analysis date controls.
+Hover/focus links map points, alert cards and queue rows. Dismissing an inventory
+alert hides that continuous condition without changing the readings or queue.
+Recovery and a later new condition allow another alert; source changes and
+nonconsecutive seeks reset dismissals. Missing/loading observations do not create
+empty/full alerts from stale counts. Opening an inventory alert preserves playback.
 
-Hourly snapshots do not measure failed attempts, exact downtime, separate pickup/return
-counts, or the cause of inventory changes. The MVP supports snapshot export; manual entry, persistent review records and session logging are deferred.
+All data are visibly labeled synthetic. The History modal displays the Individuals
+chart; daily-inventory and heatmap charts remain API outputs, not additional
+visible dashboard panels. No customer-attempt, exact outage-duration or causal
+performance claims are made.
 
 ## 7. Test datasets and codebook (rubric: demo 10, datasets 5, codebook 5)
-2-3 small CSVs in `data/`, invented but shaped like real field data, each showing one behavior.
-`data/README.md` is the codebook: every file, every column with units, and what it would take to
-collect this data for real.
-- **Datasets:** normal.csv (designed daily inventory patterns with exported counts within 6–24), and disruption.csv (identical first 25 service dates, then disclosed rider-event windows demonstrating empty/full, low/high and exact 6/24 boundaries). The former edge_cases.csv is retired; independent software fixtures retain constant, threshold, missing and insufficient-history coverage. Schema: timestamp, station_id, bikes; capacity is in stations.json. Both scenarios have 20 fictional Ithaca-area stations, capacity 30 each, a closed fleet of 300 bikes, 15 hourly snapshots from 07:00 through 21:00 (America/New_York), and 40 synthetic weekdays from August 24 through October 16, 2026: 12,000 rows each. A fixed-seed ride simulator assigns bike IDs and positive trip durations; inventory continues overnight and on weekends with no daily reset or operator rebalancing. JSONL event logs and generation reports support independent audit of docked plus in-transit conservation. These artifacts are simulation evidence, not required dashboard inputs. The dashboard continues to read the CSVs and unchanged station/settings configuration.
-- **Generation and analysis are distinct:** v5 was selected and validated using a historical three-rule detector with first-25-date reference estimates and 15 monitoring dates, supplied unchanged as data/_qc_snapshot.py. Its zero-signal normal acceptance and data/demo_guide.md checkpoints describe that detector only. The current dashboard uses the full selected date range and eight optional History rules; it must recompute its own results and may flag normal data. No baseline approval or automatic SPC alarms are added. Bounded counts, dependence and fixture selection prevent claims of calibrated false-alarm rates or process stability. Existing known-answer tests remain independent of generated data. Coordinates and rider patterns are disclosed synthetic assumptions, not measured Ithaca demand.
+
+Provide two field-shaped synthetic observation CSVs with the same schema and
+station/calendar configuration, each demonstrating a different inventory scenario.
+
+| Dataset | Contents and expected behavior |
+|---|---|
+| `data/normal.csv` | 12,000 observations; published counts stay within 6–24 bikes, so there are no empty/full or low/high operational warnings. Optional History diagnosis can still find patterns. |
+| `data/disruption.csv` | 12,000 observations; same first 25 service dates, followed by disclosed event scenarios with empty/full, low/high, exact-threshold and historical pattern examples. |
+
+`data/README.md` is the codebook: file purposes, columns, units, assumptions,
+generation method and how station snapshots could be collected in reality.
+`data/stations.json` and `data/settings.json` supply shared metadata, not additional
+observation scenarios. Constant, missing, invalid and insufficient-data cases are
+covered by independent software fixtures; a third demonstration CSV is not required.
+
+The seed-5300 ride simulator assigns bike IDs and positive trip durations, with
+inventory continuing overnight/weekends and no daily reset or operator rebalancing.
+JSONL event logs and generation reports support fleet-accounting audits; they are
+not required user inputs. Geography and rider behavior are synthetic assumptions.
+
+The preserved generator checks use a different, three-rule reference-period
+method from current History. They do not establish expected results for the
+current eight-rule diagnosis. In particular, normal S01 at 07:00 has a T3 match
+under the current full-series calculation. Use `demo/README.md` for the current
+UI walkthrough and checkpoints, not the legacy generator walkthrough.
 
 ## 8. Documentation and reproducibility (rubric: docs 10, public repo 5)
-- `README.md` says what the tool does, for whom, every input and parameter, how to run it in one
-  command, and walks through the demo on each test dataset.
-- Public GitHub repo; a fresh clone runs `testme` and the tests pass with no extra steps.
-- Submit on Devpost: the repo link plus a demo.
+
+- `README.md` and `app/README.md` explain the user, inputs, parameters, outputs, local startup, library/API and deployment.
+- `data/README.md` documents both scenarios and real-world collection requirements; `demo/README.md` demonstrates each scenario with expected numbers and interpretation.
+- The public repository includes code, dependency locks, data, generator, tests and packaging scripts. A fresh clone must run after the documented prerequisites are installed.
+- Verification commands are `uv run --frozen --extra api pytest tests data/test_generate_data.py -q`, `npm test --prefix app/frontend`, and `npm run build --prefix app/frontend`.
+- The current implementation was locally checked on October 17, 2026: 240 Python/data tests and 89 frontend tests passed, and the production frontend build succeeded. These are implementation checks, not proof of the statistical assumptions or public deployment.
+- Before submission, verify the deployed public application in a logged-out browser and reproduce the demo checkpoints. Submit the repository link and demo on Devpost. Deployment, submission and teammate comprehension are separate acceptance checks, not claimed complete by this document.
 
 ## 9. Out of scope
-What we will NOT build, so nobody (human or agent) builds it by accident.
-- Default: logins, databases, real customer data, a second statistic before the first one is tested.
-- No customer-attempt or failure-rate inference, exact stockout duration, demand forecasting, machine learning, route optimization, automatic dispatch, faults/closures, real telemetry, or causal claims about rebalancing. No p chart treating successive inventory snapshots as independent customer trials. The data generator includes simplified positive-duration rides for fleet accounting; it is not a calibrated traffic or demand simulator.
+
+- Live telemetry, login/accounts, databases, persistent uploads, persistent review records and manual data-entry forms.
+- Customer failure/success rates, separate pickup/return counts, exact downtime, inferred demand or causes from hourly inventory differences.
+- Prospective SPC alarms, frozen-reference monitoring, automated baseline approval, calibrated false-alarm claims or process-capability claims.
+- Demand forecasting, machine learning, route optimization, balanced dispatch planning, automatic bike transfers or causal claims about intervention benefits.
+- Faulty/unusable bikes, broken docks and closed stations without an extended input schema.
+
+The product supports inventory inspection, manual action suggestions and retrospective
+pattern investigation. It does not claim to predict shortages or prevent them automatically.
