@@ -1,0 +1,244 @@
+.interactive-history {
+  min-width:0;
+  max-width:100%;
+  margin:18px 0 14px;
+}
+
+.history-plot-scroll {
+  max-width:100%;
+  overflow-x:auto;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:#fff;
+  overscroll-behavior-x:contain;
+}
+
+.history-plot-scroll:focus-visible {
+  outline:2px solid #69a596;
+  outline-offset:3px;
+}
+
+.history-interactive-chart {
+  display:block;
+  width:100%;
+  min-width:640px;
+  height:auto;
+  aspect-ratio:960 / 390;
+  font-family:'DM Sans',Arial,sans-serif;
+  font-size:14px;
+}
+
+.history-y-tick line {
+  stroke:#edf1ee;
+  stroke-width:1;
+}
+
+.history-y-tick text,
+.history-date-axis text,
+.history-axis-label {
+  fill:#6f817b;
+}
+
+.history-date-axis line {
+  stroke:#c8d4cd;
+  stroke-width:1;
+}
+
+.history-axis-label {
+  font-size:13px;
+}
+
+.history-control-line line {
+  stroke:#bc8541;
+  stroke-width:1.6;
+  stroke-dasharray:6 4;
+}
+
+.history-control-line text {
+  fill:#916327;
+  font-size:12px;
+}
+
+.history-control-cl line {
+  stroke:#318471;
+  stroke-dasharray:none;
+}
+
+.history-control-cl text {
+  fill:#28745f;
+}
+
+.history-sigma-guide line {
+  stroke:#d9dfdb;
+  stroke-width:1;
+  stroke-dasharray:3 5;
+}
+
+.history-sigma-guide text {
+  fill:#8a9690;
+  font-size:11px;
+}
+
+.history-series-line {
+  fill:none;
+  stroke:#86a496;
+  stroke-width:1.7;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.history-point {
+  cursor:pointer;
+  outline:none;
+}
+
+.history-point-hit {
+  fill:transparent;
+}
+
+.history-point-dot {
+  fill:#258577;
+  stroke:#fff;
+  stroke-width:1.3;
+}
+
+.history-point-ring {
+  fill:#fff5dd;
+  stroke:#b98124;
+  stroke-width:1.8;
+}
+
+.history-point-selected .history-point-dot {
+  fill:#c64648;
+  stroke:#fff;
+}
+
+.history-point-selected .history-point-ring {
+  stroke:#c64648;
+  fill:#fff;
+}
+
+.history-point:focus-visible .history-point-hit,
+.history-point-active .history-point-hit {
+  stroke:#18332f;
+  stroke-width:1.7;
+  stroke-dasharray:2 2;
+}
+
+.history-missing text {
+  fill:#7c8983;
+  font-size:17px;
+}
+
+.history-point-information {
+  min-height:66px;
+  margin:8px 0;
+  padding:10px 12px;
+  border:1px solid transparent;
+  border-radius:7px;
+  color:#6f817b;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.history-point-information p {
+  margin:0;
+}
+
+.history-point-information.active {
+  border-color:#dce5e0;
+  background:#f4f8f5;
+  color:#344b40;
+}
+
+.history-point-information [role=tooltip] {
+  display:flex;
+  flex-wrap:wrap;
+  column-gap:18px;
+  row-gap:3px;
+}
+
+.history-diagnosis-summary {
+  margin:0 0 12px;
+  padding:13px 15px;
+  border:1px solid #dce5e0;
+  border-radius:8px;
+  background:#f4f8f5;
+}
+
+.history-diagnosis-summary.detected {
+  border-color:#e4c8bf;
+  background:#fff7f3;
+}
+
+.history-diagnosis-summary h3 {
+  margin:0 0 6px;
+  color:#8f3837;
+  font-size:14px;
+  line-height:1.5;
+}
+
+.history-diagnosis-summary p {
+  margin:0;
+  font-size:13px;
+}
+
+.history-diagnosis-summary .history-diagnosis-count {
+  margin-top:6px;
+  color:#7a6861;
+  font-size:11px;
+}
+
+.history-issue-tabs {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  padding:2px 0 10px;
+}
+
+.history-issue-tabs button {
+  justify-content:start;
+  padding:8px 10px;
+  max-width:100%;
+  text-align:left;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.history-issue-tabs button span {
+  flex:none;
+  font-weight:700;
+}
+
+.history-issue-tabs button[aria-selected=true] {
+  border-color:#c64648;
+  background:#fff2ee;
+  color:#9c3537;
+}
+
+.history-unavailable-rules {
+  margin:5px 0 0;
+  color:#6f817b;
+  font-size:12px;
+}
+
+.history-unavailable-rules summary {
+  cursor:pointer;
+  width:fit-content;
+}
+
+.history-unavailable-rules ul {
+  margin:8px 0;
+  padding-left:22px;
+  line-height:1.6;
+}
+
+@media(max-width:600px) {
+  .history-point-information {
+    min-height:88px;
+  }
+
+  .history-point-information [role=tooltip] {
+    flex-direction:column;
+  }
+}

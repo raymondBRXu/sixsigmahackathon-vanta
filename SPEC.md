@@ -53,13 +53,40 @@ Say the method in words before any code exists. Load the `stats-first-steering` 
 - **Known-answer check:** Five-station snapshot fixture with capacity 30 and bikes [0,0,9,15,30] gives empty=40%, full=20%, two-way availability=40%, and mean occupancy=36%. A single-station sequence [10,12,11,13,14] at one selected hour on five consecutive scheduled service dates gives CL=12, MR=[2,1,2,1], MR_bar=1.5, sigma_hat=1.329787234, LCL=8.010638298 and UCL=15.989361702. Test station/hour/date isolation, no future data, missing scheduled dates, non-service-day gaps, constant data, one observation and invalid input. Source: course sysen/functions/functions_process_control.py (moving-range estimator and plot layers), with deterministic d2=1.128 from [NIST Individuals charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm).
 
 Fixed for every team:
-- The statistic lives in **one plain, tested function** (`app/dockwatch/qc.py`). The API, app or
+- Each statistic lives in **one plain, tested function** (`app/dockwatch/qc.py` and `app/dockwatch/patterns.py`). The API, app or
   package only calls it and displays the result. No statistics inside UI code.
 - Every statistic has a test against a known answer and a degenerate case (constant data, n = 1, missing values).
 - You can explain every number the tool prints. If you cannot, it is not done.
 
+### Optional History diagnosis
+
+Diagnosis is an explicit toggle, off each time History opens. Enabling it selects
+the full service-date range and disables every range control until toggled off.
+The selected station/hour remains the analysis unit. Compute CL and sigma once
+from that full sequence using the existing Individuals estimator, then scan all
+eight course-image rules: T1 one point strictly beyond 3 sigma; T2 at least 2 of
+3 beyond 2 sigma on the same side; T3 at least 4 of 5 beyond 1 sigma on the same
+side; T4 eight strictly on the same side of CL; T5 six strictly increasing or
+decreasing; T6 fifteen within inclusive +/-1 sigma; T7 eight outside +/-1 sigma
+with both sides represented; T8 fourteen points with thirteen alternating nonzero differences.
+Missing planned readings interrupt every window; non-service days do not.
+Equal observations break trends/alternation; equality with CL breaks T4.
+Unavailable estimates or insufficient contiguous readings are explicit, not a
+passed test. Keep raw windows and contributing indices distinct from the point
+where the final observation confirms a rule. These are exploratory pattern
+matches, not calibrated alarms or diagnoses of their physical cause.
+
+The History chart renders as interactive React SVG with hover/focus information
+for every observed point, retaining date selection, gaps, CL and unclipped limits.
+Diagnosis flags the union of all contributing points; one tab per detected rule
+selects its contributing points in red and a short English explanation above the
+chart. Multiple matches of one rule share a tab, and overlapping windows do not
+duplicate points. Changing hour recomputes diagnosis while retaining the lock;
+closing History resets diagnosis. Python owns all rule decisions; React only
+renders API results. Existing static SVG endpoints remain compatible.
+
 ## 5. Delivery (rubric: working tool 25)
-- **Stack:** React/Vite dashboard, MapLibre station map, FastAPI HTTP API and the independently installable `dockwatch` Python library. Plotnine renders the existing analysis charts to SVG. No Streamlit runtime.
+- **Stack:** React/Vite dashboard, MapLibre station map, FastAPI HTTP API and the independently installable `dockwatch` Python library. History uses interactive React SVG; Plotnine retains the static chart API. No Streamlit runtime.
 - **Implementation reference:** Adapt `demos/fastapi/` and `demos/reactfront/`. Reuse the previously verified framework-free data validation, statistics and plotnine functions. The React migration preserves the final interval-based dashboard behavior, not the superseded baseline-review design.
 - **Environment:** Python 3.12 with `uv.lock`; Node.js 22 or newer supported by the frontend engine constraint, with `package-lock.json`. All source comments and docstrings are English.
 - **Local run:** `./app/testme` installs locked dependencies, builds React, then serves the dashboard and API on one origin. A Vite development command is also documented.

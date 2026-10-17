@@ -12,6 +12,28 @@ const config = {
 const ready = () => dashboardReducer(initialState, { type: 'sourceLoaded', config })
 
 describe('dashboard navigation and playback', () => {
+  it('locks the full history range for diagnosis until explicitly toggled off', () => {
+    let state = dashboardReducer(ready(), { type: 'openHistory', station: 'S20' })
+    expect(state.diagnosis).toBe(false)
+    state = dashboardReducer(state, { type: 'setDateRange', dateRange: [20, 25] })
+    state = dashboardReducer(state, { type: 'toggleDiagnosis' })
+    expect(state).toMatchObject({ diagnosis: true, dateRange: [0, 39], historyStation: 'S20' })
+    expect(dashboardReducer(state, { type: 'setDateRange', dateRange: [20, 25] })).toBe(state)
+    state = dashboardReducer(state, { type: 'selectHour', hour: 17 })
+    expect(state).toMatchObject({ diagnosis: true, dateRange: [0, 39], hour: 17 })
+    state = dashboardReducer(state, { type: 'toggleDiagnosis' })
+    state = dashboardReducer(state, { type: 'setDateRange', dateRange: [20, 25] })
+    expect(state).toMatchObject({ diagnosis: false, dateRange: [20, 25] })
+  })
+  it('never carries diagnosis into another history dialog or source', () => {
+    const state = { ...ready(), historyStation: 'S01', diagnosis: true }
+    for (const action of [
+      { type: 'closeHistory' }, { type: 'openHistory', station: 'S20' },
+      { type: 'sourceRequested', source: 'edge_cases' }, { type: 'sourceLoaded', config },
+      { type: 'selectOperationsView', view: 'Overview' },
+    ]) expect(dashboardReducer(state, action).diagnosis).toBe(false)
+    expect(dashboardReducer(ready(), { type: 'toggleDiagnosis' }).diagnosis).toBe(false)
+  })
   it('switches between Overview and View by Station without resetting or pausing playback', () => {
     let state = { ...ready(), playing: true }
     expect(state.operationsView).toBe('Overview')

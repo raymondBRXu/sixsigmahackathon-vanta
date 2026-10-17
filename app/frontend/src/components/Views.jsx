@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { apiUrl } from '../api.js'
 import { useResource } from '../hooks.js'
-import { count, decimal, formatDate, formatHour, formatTime, moveLabel, percent, STATUS } from '../format.js'
+import { count, decimal, formatHour, formatTime, moveLabel, percent, STATUS } from '../format.js'
 import { DateRangeSlider } from './Controls.jsx'
 import StationMap from './StationMap.jsx'
+import HistoryChart from './HistoryChart.jsx'
 
 export function Metric({ label, value, detail }) {
   return <div className="metric"><span className="metric-label">{label}</span><strong>{value}</strong>{detail && <span className="metric-detail">{detail}</span>}</div>
@@ -11,21 +12,6 @@ export function Metric({ label, value, detail }) {
 
 export function StatusBadge({ status }) {
   return <span className="status-badge" style={{ '--status-color': STATUS[status].color }}><i />{STATUS[status].label}</span>
-}
-
-function Chart({ kind, params, alt }) {
-  const url = apiUrl(`charts/${kind}.svg`, params)
-  return <ChartImage key={url} url={url} alt={alt} kind={kind} />
-}
-
-function ChartImage({ url, alt, kind }) {
-  const [loaded, setLoaded] = useState(false)
-  const [error, setError] = useState(false)
-  return <div className={`chart ${kind === 'history' ? 'history-chart' : ''} ${loaded ? 'loaded' : 'pending'}`}>
-    {!loaded && !error && <p className="chart-message" role="status">Drawing chart…</p>}
-    {error ? <p className="chart-message error" role="alert">This chart could not load. Change the selection or reload to try again.</p>
-      : <img src={url} alt={alt} onLoad={() => setLoaded(true)} onError={() => setError(true)} />}
-  </div>
 }
 
 export function Operations({ state, dispatch, camera }) {
@@ -86,10 +72,11 @@ export function Operations({ state, dispatch, camera }) {
 }
 
 export function StationHistory({ state, dispatch }) {
-  const { source, historyStation: station, dateRange, hour, config } = state
+  const { source, historyStation: station, dateRange, hour, config, diagnosis } = state
   const cursor = config.timestamps.length - 1
   const params = { source, cursor, station_id: station, hour,
-    start_date: config.service_dates[dateRange[0]], end_date: config.service_dates[dateRange[1]] }
+    start_date: config.service_dates[dateRange[0]], end_date: config.service_dates[dateRange[1]],
+    ...(diagnosis ? { diagnosis: true } : {}) }
   const key = JSON.stringify(params)
   const [settledKey, setSettledKey] = useState(key)
   useEffect(() => {
@@ -103,7 +90,7 @@ export function StationHistory({ state, dispatch }) {
   return <section aria-label="Individuals chart history">
     <div className="analysis-heading">
       <h2>{station} · {config.stations.find((row) => row.station_id === station).display_name}</h2>
-      <p className="caption">Compare this station at the same operating hour across service dates. Each point is one observed bike count. The full dataset is available; choose the dates to plot below.</p>
+      <p className="caption">Compare this station at the same operating hour across service dates. Hover a point to inspect its reading. Enable Diagnosis to check all dates for eight unusual patterns.</p>
     </div>
     <div className="hour-selector">
       <label htmlFor="analysis-hour">Operating hour</label>
@@ -111,8 +98,17 @@ export function StationHistory({ state, dispatch }) {
         {config.hours.map((value) => <option key={value} value={value}>{formatHour(value)}</option>)}
       </select>
       <span className="caption">{config.timezone}</span>
+      <button type="button" className="diagnosis-toggle" aria-pressed={Boolean(diagnosis)}
+        aria-describedby="diagnosis-range-note" onClick={() => dispatch({ type: 'toggleDiagnosis' })}>
+        <span aria-hidden="true">{diagnosis ? '✓' : '◎'}</span> Diagnosis
+      </button>
     </div>
+    <p id="diagnosis-range-note" className="caption diagnosis-range-note" role="status">
+      {diagnosis ? 'Diagnosis is on. All service dates are locked; turn Diagnosis off to change the range.'
+        : 'Diagnosis is off. Choose any date range, or enable Diagnosis to use all service dates.'}
+    </p>
     <DateRangeSlider dateRange={dateRange} max={config.service_dates.length - 1} dates={config.service_dates}
+      disabled={Boolean(diagnosis)}
       onChange={(value) => dispatch({ type: 'setDateRange', dateRange: value })} />
     {error && <p className="error-banner" role="alert">{error}</p>}
     <div className="metric-grid" aria-busy={!summary && !error}>
@@ -121,7 +117,8 @@ export function StationHistory({ state, dispatch }) {
       <Metric label="LCL" value={decimal(limits?.lcl)} />
       <Metric label="UCL" value={decimal(limits?.ucl)} />
     </div>
-    {data ? <Chart kind="history" params={settledParams} alt={`Individuals chart for ${station} at ${formatHour(hour)} on each service date from ${formatDate(params.start_date)} through ${formatDate(params.end_date)}, with dates on the horizontal axis, center line and estimated control limits when supported.`} />
+    {data ? <HistoryChart key={settledKey} data={data} station={station} hour={hour}
+      timezone={config.timezone} diagnosis={Boolean(diagnosis)} />
       : !error && <div className="chart history-chart pending"><p className="chart-message" role="status">Loading same-hour analysis…</p></div>}
     {summary && (!limits ? <p className="info-message" role="status">{summary.reason}</p>
       : <p className="caption">Estimated from {summary.pairs} consecutive service-date pairs at {formatHour(hour)} · mean moving range {limits.mr_mean.toFixed(3)} · sigma estimate {limits.sigma.toFixed(3)}.</p>)}

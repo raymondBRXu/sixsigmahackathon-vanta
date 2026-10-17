@@ -29,7 +29,7 @@ const stations = [
 ]
 const scenarios = [{ id: 'normal', label: 'Normal operations' }, { id: 'edge_cases', label: 'Edge cases' }]
 
-function mockApi({ missing = false, uploadError = false, configOverrides = {}, summary } = {}) {
+function mockApi({ missing = false, uploadError = false, configOverrides = {}, summary, diagnosisResult } = {}) {
   const config = (source) => ({ source: { id: source, label: `${source}.csv`, observations: 10 }, timestamps,
     service_dates: ['2026-09-28'], hours, timezone: 'America/New_York', stations, scenarios, default_cursor: 2, ...configOverrides })
   const rows = stations.map((station, index) => ({
@@ -58,7 +58,15 @@ function mockApi({ missing = false, uploadError = false, configOverrides = {}, s
         stations: rows, queue: rows.filter((row) => row.status !== 'normal'),
         metrics: { availability: missing ? 0 : 0.5, available_count: missing ? 0 : 1, empty_count: 1, full_count: 0, n: missing ? 1 : 2, planned: 2, empty_rate: missing ? 1 : 0.5, full_rate: 0, coverage: missing ? 0.5 : 1 },
       } : {
-        summary: summary || { n: 3, planned: 3, pairs: 2, cl: 18.67, limits: { lcl: 13.35, ucl: 23.99, mr_mean: 2, sigma: 1.773 }, reason: '' },
+        capacity: 30,
+        history: config(request.searchParams.get('source')).service_dates
+          .filter((day) => day >= request.searchParams.get('start_date') && day <= request.searchParams.get('end_date'))
+          .map((day, index) => ({ timestamp: `${day}T${String(request.searchParams.get('hour')).padStart(2, '0')}:00:00-04:00`, bikes: [23, 26, 14][index % 3] })),
+        summary: { ...(summary || { n: 3, planned: 3, pairs: 2, cl: 18.67, limits: { lcl: 13.35, ucl: 23.99, mr_mean: 2, sigma: 1.773 }, reason: '' }),
+          special_causes: request.searchParams.get('diagnosis') === 'true'
+            ? (typeof diagnosisResult === 'function' ? diagnosisResult(request.searchParams) : diagnosisResult)
+              || { status: 'enabled', issues: [], rule_status: {}, events: [] }
+            : { status: 'disabled', issues: [], rule_status: {}, events: [] } },
       }
     return { ok: true, json: async () => payload }
   })
@@ -90,6 +98,52 @@ async function openStationHistory(station = 'S01') {
 }
 
 describe('dashboard end-to-end component wiring', () => {
+  it('locks all dates for opt-in diagnosis, clears stale issues on hour changes, and unlocks on cancel', async () => {
+    const issues = [
+      { id: 'T1', title: 'Beyond control limits', description: 'One point is more than three sigma from the center line.', point_indices: [1], event_count: 1 },
+      { id: 'T2', title: 'Two of three beyond two sigma', description: 'At least two of three consecutive points are beyond two sigma on the same side.', point_indices: [0, 1], event_count: 1 },
+    ]
+    const fetch = mockApi({ configOverrides: multiDayConfig,
+      diagnosisResult: (params) => ({ status: 'enabled', events: [], rule_status: {}, issues: params.get('hour') === '7' ? issues : [] }),
+    })
+    render(<App />)
+    await screen.findByText('18 / 30')
+    const dialog = await openStationHistory('S02')
+    await within(dialog).findByText('18.67')
+    const button = within(dialog).getByRole('button', { name: 'Diagnosis' })
+    expect(button.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.change(within(dialog).getByLabelText('Start date'), { target: { value: '1' } })
+    await waitFor(() => expect(lastAnalysisParams(fetch).start_date).toBe('2026-09-29'))
+    fireEvent.click(button)
+    expect(button.getAttribute('aria-pressed')).toBe('true')
+    for (const label of ['Analysis start date', 'Analysis end date', 'Start date', 'End date']) {
+      expect(within(dialog).getByLabelText(label).disabled).toBe(true)
+    }
+    expect(within(dialog).getByLabelText('Start date').value).toBe('0')
+    expect(within(dialog).getByLabelText('End date').value).toBe('2')
+    await waitFor(() => expect(lastAnalysisParams(fetch)).toEqual({ source: 'normal', cursor: '14', station_id: 'S02', hour: '7', start_date: '2026-09-28', end_date: '2026-09-30', diagnosis: 'true' }))
+    const firstTab = await within(dialog).findByRole('tab', { name: /T1/ })
+    expect(firstTab.getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(within(dialog).getByRole('tab', { name: /T2/ }))
+    expect(within(dialog).getByText(issues[1].description)).toBeTruthy()
+    fireEvent.change(within(dialog).getByLabelText('Operating hour'), { target: { value: '9' } })
+    expect(within(dialog).queryAllByRole('tab')).toHaveLength(0)
+    await waitFor(() => expect(lastAnalysisParams(fetch)).toMatchObject({ hour: '9', diagnosis: 'true' }))
+    await within(dialog).findByRole('group', { name: /Individuals chart for S02 at 09:00/ })
+    expect(within(dialog).queryAllByRole('tab')).toHaveLength(0)
+    expect(within(dialog).getByLabelText('Start date').disabled).toBe(true)
+    fireEvent.click(button)
+    expect(within(dialog).getByLabelText('Start date').disabled).toBe(false)
+    fireEvent.change(within(dialog).getByLabelText('Start date'), { target: { value: '1' } })
+    await waitFor(() => expect(lastAnalysisParams(fetch)).toMatchObject({ start_date: '2026-09-29', hour: '9' }))
+    expect(lastAnalysisParams(fetch).diagnosis).toBeUndefined()
+    fireEvent.click(button)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close history' }))
+    fireEvent.click(screen.getByRole('button', { name: /^History for S01 ·/ }))
+    expect(screen.getByRole('button', { name: 'Diagnosis' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByLabelText('Start date').disabled).toBe(false)
+    await waitFor(() => expect(lastAnalysisParams(fetch)).toEqual({ source: 'normal', cursor: '14', station_id: 'S01', hour: '7', start_date: '2026-09-28', end_date: '2026-09-30' }))
+  })
   it('opens all station charts and follows stepping, rewinding and source changes without old workspace tabs', async () => {
     const allStations = Array.from({ length: 20 }, (_, index) => ({
       station_id: `S${String(index + 1).padStart(2, '0')}`, display_name: `Station ${index + 1}`, capacity: 30,
@@ -166,13 +220,11 @@ describe('dashboard end-to-end component wiring', () => {
     const dialog = await openStationHistory('S02')
     expect(await within(dialog).findByText('18.67')).toBeTruthy()
     expect(lastAnalysisParams(fetch)).toEqual({ source: 'normal', cursor: '4', station_id: 'S02', hour: '7', start_date: '2026-09-28', end_date: '2026-09-28' })
-    const history = new URL(within(dialog).getByAltText(/Individuals chart for S02 at 07:00/).src)
-    expect(history.pathname).toBe('/api/charts/history.svg')
-    expect(Object.fromEntries(history.searchParams)).toEqual(lastAnalysisParams(fetch))
+    expect(within(dialog).getByRole('group', { name: /Individuals chart for S02 at 07:00/ })).toBeTruthy()
     expect(within(dialog).getByText(/2 consecutive service-date pairs at 07:00/)).toBeTruthy()
     expect(within(dialog).getByText('13.35')).toBeTruthy()
     expect(within(dialog).getByText('23.99')).toBeTruthy()
-    expect(within(dialog).getAllByRole('img')).toHaveLength(1)
+    expect(within(dialog).queryAllByRole('img')).toHaveLength(0)
     expect(within(dialog).queryByAltText(/Latest-day inventory|Occupancy heatmap/)).toBeNull()
     expect(within(dialog).queryByRole('region', { name: 'Simulation playback' })).toBeNull()
     expect(within(dialog).queryByText(/baseline|Review SPC/i)).toBeNull()
@@ -198,8 +250,7 @@ describe('dashboard end-to-end component wiring', () => {
     expect(lastAnalysisParams(fetch)).toEqual({ source: 'normal', cursor: '14', station_id: 'S01', hour: '7', start_date: '2026-09-28', end_date: '2026-09-30' })
     fireEvent.change(within(dialog).getByLabelText('Operating hour'), { target: { value: '11' } })
     await waitFor(() => expect(lastAnalysisParams(fetch)).toMatchObject({ cursor: '14', hour: '11', end_date: '2026-09-30' }))
-    const history = within(dialog).getByAltText(/Individuals chart for S01 at 11:00/)
-    expect(Object.fromEntries(new URL(history.src).searchParams)).toEqual(lastAnalysisParams(fetch))
+    expect(within(dialog).getByRole('group', { name: /Individuals chart for S01 at 11:00/ })).toBeTruthy()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close history' }))
     expect(screen.getByRole('slider', { name: 'Simulation time' }).value).toBe('7')
   })
@@ -214,8 +265,7 @@ describe('dashboard end-to-end component wiring', () => {
     fireEvent.change(within(dialog).getByLabelText('Start date'), { target: { value: '1' } })
     fireEvent.change(within(dialog).getByRole('slider', { name: 'Analysis end date' }), { target: { value: '1' } })
     await waitFor(() => expect(lastAnalysisParams(fetch)).toEqual({ source: 'normal', cursor: '14', station_id: 'S02', hour: '9', start_date: '2026-09-29', end_date: '2026-09-29' }))
-    const history = within(dialog).getByAltText(/Individuals chart for S02 at 09:00/)
-    expect(Object.fromEntries(new URL(history.src).searchParams)).toEqual(lastAnalysisParams(fetch))
+    expect(within(dialog).getByRole('group', { name: /Individuals chart for S02 at 09:00/ })).toBeTruthy()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close history' }))
     fireEvent.change(screen.getByRole('slider', { name: 'Simulation time' }), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: /^History for S02 ·/ }))
@@ -285,7 +335,7 @@ describe('dashboard end-to-end component wiring', () => {
     const dialog = await openStationHistory()
     expect(await within(dialog).findByText(summary.reason)).toBeTruthy()
     expect(within(dialog).getByText(`${summary.n} / ${summary.planned}`)).toBeTruthy()
-    expect(within(dialog).getByAltText(/Individuals chart for S01/)).toBeTruthy()
+    expect(within(dialog).getByRole('group', { name: /Individuals chart for S01/ })).toBeTruthy()
     const center = within(dialog).getByText('Center line').closest('.metric')
     expect(within(center).getByText(summary.cl === null ? '—' : '14.00')).toBeTruthy()
     expect(within(within(dialog).getByText('LCL').closest('.metric')).getByText('—')).toBeTruthy()

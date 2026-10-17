@@ -179,3 +179,60 @@ and Back restores all 20 charts. Focus returns to the History button after the
 modal closes. At 390px, the dialog fits at 370px without page or content overflow.
 Temporary browser tabs were closed and the viewport override reset. No extra
 server or backend changes were needed; `git diff --check` passes.
+
+### H-11: interactive History diagnosis
+
+Before implementation, the working tree was clean and the latest commit was
+`f8b1e48` (`react v2`), preserving the H-10 snapshot. The user's explicit request
+authorized this task. No new commit or remote publication was requested.
+
+Diagnosis defaults off. Its toggle atomically selects the full configured date
+range and locks both handles and both date selectors; the reducer also rejects
+range mutations while enabled. Turning it off unlocks the full range, and closing
+or reopening History resets diagnosis. Hour changes retain the lock and request
+fresh results. Request keys and cancellation prevent stale findings from being
+shown during selection changes.
+
+The plain detector in `app/dockwatch/patterns.py` applies all eight course-image
+rules to one station/hour's full service-date series using the existing mean and
+MR/1.128 sigma. Missing slots break windows; contributing points are distinct
+from each window's confirming endpoint. Raw events are retained and each detected
+rule returns a deduplicated union of contributing indices. Unavailable tests are
+explicit. `/api/analysis?diagnosis=true` enforces full planned timestamp coverage
+and full configured bounds. Missing readings do not disable the feature. Default
+requests skip detection; existing static SVG endpoints remain compatible.
+
+History now uses React SVG with hover/focus/tap details, date slots, missing gaps
+and unclipped limits. All matched points are flagged; the selected issue's points
+are red and other matches have amber rings. Tabs below the chart collect each
+detected rule and update its short English explanation above the chart. Tabs
+support arrows/Home/End; keyboard users can focus individual observations.
+The chart scrolls horizontally on narrow screens and the tooltip sits outside
+the scroller to avoid clipping. Python supplies every rule decision.
+
+Verification on 2026-10-17:
+
+- Stats-first detector verification preceded UI implementation: `50 passed`.
+- `UV_CACHE_DIR=/tmp/dockwatch-uv-cache uv run --locked --extra api pytest`:
+  `216 passed, 1 warning in 17.07s`; only the existing Starlette/httpx warning.
+- `npm test --prefix app/frontend`: `Test Files 8 passed (8)`,
+  `Tests 60 passed (60)`. `npm run build --prefix app/frontend`:
+  `43 modules transformed`, `built in 1.14s`; existing MapLibre chunk warning.
+- Independent read-only review found no defects. Additional checks on 300 seeded
+  boundary/gap series preserve results under positive affine transforms and
+  reverse window/contributor indices correctly under time reversal. Five
+  independently planted rule fixtures also passed.
+- Browser: normal S01 at 07:00 narrows to 20 readings; Diagnosis restores 40,
+  locks all four controls, flags 22 unique contributing points and initially
+  highlights T1's one point. T2 selects 9 red points, T3 selects 12, with matching
+  English text and keyboard tab focus. Point details include date/hour/count
+  and rule IDs. Switching to 21:00 recomputes while locked; disabling diagnosis
+  removes tabs/flags and permits Oct 1–16 (12 readings). Opening S02 resets
+  diagnosis off, 07:00 and full dates.
+- At 390px, dialog width 370px and body width 390px; modal content has no horizontal
+  overflow. The 640px SVG scrolls inside its 334px chart viewport. Viewport override
+  reset after checks.
+- The updated server runs at the original localhost port 8000. The original page
+  was reloaded and verified with Morning disruption, S01, 07:00 and diagnosis on
+  (T1/T2/T3/T4/T7 tabs). The temporary port 8001 verification server/tab are cleaned
+  up after testing. Work is verified and remains uncommitted.

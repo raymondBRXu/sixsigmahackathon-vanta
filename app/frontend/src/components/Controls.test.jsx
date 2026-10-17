@@ -7,6 +7,16 @@ const timestamps = ['2026-09-28T07:00:00-04:00', '2026-09-28T08:00:00-04:00', '2
 const dates = ['2026-09-28', '2026-09-30', '2026-10-01']
 
 describe('time controls', () => {
+  it('disables both range handles and both date selectors while diagnosis is active', () => {
+    const { rerender } = render(<DateRangeSlider dateRange={[0, 2]} max={2} dates={dates} disabled onChange={() => {}} />)
+    for (const control of [...screen.getAllByRole('slider'), ...screen.getAllByRole('combobox')]) {
+      expect(control.disabled).toBe(true)
+    }
+    rerender(<DateRangeSlider dateRange={[0, 2]} max={2} dates={dates} onChange={() => {}} />)
+    for (const control of [...screen.getAllByRole('slider'), ...screen.getAllByRole('combobox')]) {
+      expect(control.disabled).toBe(false)
+    }
+  })
   it('labels both handles with service dates and prevents an inverted range', () => {
     const onChange = vi.fn()
     render(<DateRangeSlider dateRange={[1, 1]} max={2} dates={dates} onChange={onChange} />)

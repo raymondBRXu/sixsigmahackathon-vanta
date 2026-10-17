@@ -341,3 +341,132 @@ def test_same_hour_empty_future_selection_renders_without_counting_future_data(c
     chart = client.get("/api/charts/history.svg", params=params)
     assert chart.status_code == 200 and "<svg" in chart.text
     assert not api.plt.get_fignums()
+
+
+def diagnosis_params(**overrides):
+    return {"cursor": len(api.PLAN) - 1, "hour": 7, "diagnosis": True,
+            "start_date": api.SETTINGS["service_dates"][0],
+            "end_date": api.SETTINGS["service_dates"][-1], **overrides}
+
+
+@pytest.mark.parametrize("params", [{}, {"cursor": 377, "hour": 7}, {"cursor": 599, "hour": 7, "diagnosis": False}])
+def test_diagnosis_is_opt_in_and_default_requests_never_call_detector(client, monkeypatch, params):
+    def unexpected_detection(*args):
+        raise AssertionError("Disabled diagnosis must not run the detector.")
+
+    monkeypatch.setattr(api, "detect_special_causes", unexpected_detection)
+    response = client.get("/api/analysis", params=params)
+    assert response.status_code == 200
+    assert response.json()["summary"]["special_causes"] == {
+        "status": "disabled", "ruleset": "course-eight-tests-v1", "rule_status": {}, "events": [], "issues": [],
+    }
+
+
+@pytest.mark.parametrize("overrides", [
+    {"start_date": "2026-08-25"},
+    {"end_date": "2026-10-15"},
+    {"start_date": "2026-08-23"},
+    {"cursor": 585, "hour": 9},
+    {"cursor": 598, "hour": 21},
+])
+def test_diagnosis_rejects_partial_calendar_or_same_day_hour_cutoff(client, overrides):
+    response = client.get("/api/analysis", params=diagnosis_params(**overrides))
+    assert response.status_code == 422
+    assert "full service-date range" in response.json()["detail"]
+
+
+def test_diagnosis_rejects_legacy_history_and_earlier_playback_date(client):
+    response = client.get("/api/analysis", params={"cursor": 599, "diagnosis": True})
+    assert response.status_code == 422
+    assert "selected operating hour" in response.json()["detail"]
+    response = client.get("/api/analysis", params=diagnosis_params(cursor=377))
+    assert response.status_code == 422
+    assert "playback date" in response.json()["detail"]
+
+
+def test_diagnosis_accepts_complete_selected_hour_before_final_daily_hour(client):
+    response = client.get("/api/analysis", params=diagnosis_params(cursor=585))
+    assert response.status_code == 200
+    result = response.json()
+    assert result["summary"]["planned"] == 40
+    assert result["history"][-1]["timestamp"] == "2026-10-16T07:00:00-04:00"
+    assert result["summary"]["special_causes"]["status"] == "enabled"
+    assert set(result["summary"]["special_causes"]["rule_status"]) == {f"T{i}" for i in range(1, 9)}
+
+
+def test_diagnosis_uses_full_station_hour_estimates_and_qualifying_contributors_only(client):
+    days = api.SETTINGS["service_dates"]
+    source = upload_csv(client, "timestamp,station_id,bikes\n" + "".join(
+        f"{day}T07:00:00-04:00,S01,{bikes}\n"
+        f"{day}T08:00:00-04:00,S01,15\n"
+        f"{day}T07:00:00-04:00,S02,10\n"
+        for day, bikes in zip(days, [17, 18] + [15] * 38)
+    ))
+    params = diagnosis_params(source=source)
+    result = client.get("/api/analysis", params=params).json()
+    assert result["summary"]["cl"] == 15.125
+    assert result["summary"]["limits"]["sigma"] == pytest.approx((4 / 39) / 1.128)
+    causes = result["summary"]["special_causes"]
+    t2 = [event for event in causes["events"] if event["rule"] == "T2"]
+    assert t2 == [{"rule": "T2", "start_index": 0, "end_index": 2, "trigger_index": 2,
+                   "contributing_indices": [0, 1], "direction": "above"}]
+    issue = next(issue for issue in causes["issues"] if issue["id"] == "T2")
+    assert issue["point_indices"] == [0, 1] and issue["event_count"] == 1
+    assert issue["title"] and issue["description"]
+    for selection in ({"hour": 8}, {"station_id": "S02"}):
+        isolated = client.get("/api/analysis", params={**params, **selection}).json()
+        assert isolated["summary"]["special_causes"]["issues"] == []
+        assert isolated["summary"]["special_causes"]["events"] == []
+    assert client.get("/api/analysis", params=params).json() == result
+    normal = client.get("/api/analysis", params=diagnosis_params()).json()
+    assert normal["history"] != result["history"]
+    assert normal["summary"]["special_causes"] != causes
+    undiagnosed = client.get("/api/analysis", params={**params, "diagnosis": False}).json()
+    assert undiagnosed["history"] == result["history"]
+    assert undiagnosed["summary"]["limits"] == result["summary"]["limits"]
+
+
+def test_diagnosis_missing_upload_slots_break_windows_without_disabling_full_range(client):
+    counts = [17, 18, None] + [15] * 37
+    source = upload_csv(client, "timestamp,station_id,bikes\n" + "".join(
+        f"{day}T07:00:00-04:00,S01,{bikes}\n"
+        for day, bikes in zip(api.SETTINGS["service_dates"], counts) if bikes is not None
+    ))
+    response = client.get("/api/analysis", params=diagnosis_params(source=source))
+    assert response.status_code == 200
+    result = response.json()
+    assert [row["bikes"] for row in result["history"]] == counts
+    assert result["summary"]["n"] == 39 and result["summary"]["planned"] == 40
+    causes = result["summary"]["special_causes"]
+    assert causes["status"] == "enabled"
+    assert all(not event["start_index"] <= 2 <= event["end_index"] for event in causes["events"])
+    assert all(2 not in issue["point_indices"] for issue in causes["issues"])
+    assert causes["rule_status"]["T2"]["evaluated_windows"] == 35
+
+
+def test_diagnosis_constant_and_empty_uploads_report_unavailable_estimates(client):
+    content = "timestamp,station_id,bikes\n" + "".join(
+        f"{day}T07:00:00-04:00,S01,15\n" for day in api.SETTINGS["service_dates"]
+    )
+    source = upload_csv(client, content)
+    result = client.get("/api/analysis", params=diagnosis_params(source=source)).json()
+    assert result["summary"]["cl"] == 15 and result["summary"]["limits"] is None
+    causes = result["summary"]["special_causes"]
+    assert causes["events"] == causes["issues"] == []
+    for rule in ("T1", "T2", "T3", "T6", "T7"):
+        assert causes["rule_status"][rule]["status"] == "unavailable"
+        assert "sigma" in causes["rule_status"][rule]["reason"]
+    for rule in ("T4", "T5", "T8"):
+        assert causes["rule_status"][rule]["status"] == "not_detected"
+    empty_source = upload_csv(client, "timestamp,station_id,bikes\n")
+    empty = client.get("/api/analysis", params=diagnosis_params(source=empty_source)).json()
+    assert empty["summary"]["special_causes"]["status"] == "enabled"
+    assert all(rule["status"] == "unavailable" for rule in empty["summary"]["special_causes"]["rule_status"].values())
+
+
+def test_diagnosis_parameter_is_only_on_json_analysis_endpoint(client):
+    paths = client.get("/api/openapi.json").json()["paths"]
+    analysis_parameters = {parameter["name"] for parameter in paths["/api/analysis"]["get"]["parameters"]}
+    svg_parameters = {parameter["name"] for parameter in paths["/api/charts/{chart}.svg"]["get"]["parameters"]}
+    assert "diagnosis" in analysis_parameters
+    assert "diagnosis" not in svg_parameters

@@ -22,13 +22,35 @@
 # Delete the paths you do not use.
 
 spec: SPEC.md
-updated: "2026-10-16"
+updated: "2026-10-17"
 
 tasks:
+  - id: H-11
+    title: Add interactive station History diagnosis with eight pattern tests
+    points: "Preserves valid QC analysis and makes pattern evidence inspectable"
+    status: in_progress
+    owner: "Codex with disjoint statistical, interaction and verification subtasks"
+    started_at: "2026-10-17"
+    owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/plan.md", "CONTRACT.yaml"]
+    notes: >
+      Explicitly requested after verifying the clean f8b1e48 snapshot.
+      Diagnosis defaults off. Enabling it selects and locks all service dates
+      until disabled. Test the selected station and operating hour against the
+      eight course-image rules using full-series estimated CL and sigma.
+      Keep the history chart interactive even with diagnosis off. Hover exposes
+      every observed point; detected-rule tabs select all contributing points
+      in red and show a short English explanation above the chart.
+    definition_of_done: >
+      uv run --locked --extra api pytest passes; npm test and npm run build
+      in app/frontend pass; browser verifies range locking/unlocking, hover,
+      issue switching, station/hour isolation and responsive layout;
+      git diff --check passes.
+    result: "Implemented and verified: 216 Python tests and 60 frontend tests pass; production build and diff checks pass. Browser confirms full-range lock/unlock, per-issue red points and explanations, point details, hour/station reset and responsive layout. Independent statistical/integration review passed. Updated app runs on localhost port 8000; changes remain uncommitted."
+
   - id: H-10
     title: Add station chart views for date analysis and realtime operations
     points: "Preserves valid QC analysis and dashboard usability"
-    status: in_progress
+    status: done
     owner: "Codex with disjoint backend, frontend and review subtasks"
     started_at: "2026-10-16"
     owns: ["app/", "tests/", "SPEC.md", "README.md", "docs/MVP.md", "docs/plan.md", "demo/", "CONTRACT.yaml"]
@@ -60,7 +82,7 @@ tasks:
       checks. History modal checks cover correct station, default hour/full dates,
       independent date analysis, close/Escape/focus, and no obsolete top tabs;
       git diff --check passes.
-    result: "Implemented and locally verified: current frontend has 44 passing tests and a successful production build; unchanged backend previously passed 152 tests. Browser confirms Overview/View by Station navigation, 20 History buttons, correct clicked station at 07:00/full dates, editable history selections, modal close/Escape/focus, paused playback, preserved chart enlargement and responsive layout. Ready pending requested commit."
+    result: "Saved in f8b1e48 (react v2), verified clean on 2026-10-17. Frontend has 44 passing tests and a successful build; backend previously passed 152 tests. Browser verified History dialogs, navigation, playback, enlargement and responsive layout."
 
   - id: H-09
     title: Rebuild the approved dashboard in React with Python API parity

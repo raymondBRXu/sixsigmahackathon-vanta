@@ -7,6 +7,7 @@ export const initialState = {
   station: 'S01',
   operationsView: 'Overview',
   historyStation: null,
+  diagnosis: false,
   playing: false,
   tiles: true,
   loading: true,
@@ -24,7 +25,7 @@ function moveCursor(state, cursor) {
 export function dashboardReducer(state, action) {
   switch (action.type) {
     case 'sourceRequested':
-      return { ...state, source: action.source, loading: true, playing: false, historyStation: null, error: '' }
+      return { ...state, source: action.source, loading: true, playing: false, historyStation: null, diagnosis: false, error: '' }
     case 'sourceLoaded': {
       const config = action.config
       const cursor = config.default_cursor
@@ -32,7 +33,7 @@ export function dashboardReducer(state, action) {
         ? state.station : config.stations[0].station_id
       const hour = config.hours.includes(state.hour) ? state.hour : config.hours[0]
       return { ...state, config, source: config.source.id, station, cursor, hour,
-        dateRange: [0, config.service_dates.length - 1], historyStation: null, playing: false, loading: false, error: '' }
+        dateRange: [0, config.service_dates.length - 1], historyStation: null, diagnosis: false, playing: false, loading: false, error: '' }
     }
     case 'sourceFailed':
       return { ...state, loading: false, error: action.message, playing: false }
@@ -41,14 +42,18 @@ export function dashboardReducer(state, action) {
     case 'selectHour':
       return state.config.hours.includes(action.hour) ? { ...state, hour: action.hour } : state
     case 'selectOperationsView':
-      return { ...state, operationsView: action.view, historyStation: null }
+      return { ...state, operationsView: action.view, historyStation: null, diagnosis: false }
     case 'openHistory':
       if (!state.config?.stations.some((station) => station.station_id === action.station)) return state
-      return { ...state, historyStation: action.station, playing: false,
+      return { ...state, historyStation: action.station, playing: false, diagnosis: false,
         hour: state.config.hours.includes(7) ? 7 : state.config.hours[0],
         dateRange: [0, state.config.service_dates.length - 1] }
     case 'closeHistory':
-      return { ...state, historyStation: null }
+      return { ...state, historyStation: null, diagnosis: false }
+    case 'toggleDiagnosis':
+      if (!state.historyStation || !state.config) return state
+      return { ...state, diagnosis: !state.diagnosis,
+        dateRange: [0, state.config.service_dates.length - 1] }
     case 'setTiles':
       return { ...state, tiles: action.tiles }
     case 'setCursor':
@@ -56,6 +61,7 @@ export function dashboardReducer(state, action) {
     case 'step':
       return { ...moveCursor(state, state.cursor + action.direction), playing: false }
     case 'setDateRange': {
+      if (state.diagnosis) return state
       const maxDate = state.config.service_dates.length - 1
       const start = Math.max(0, Math.min(action.dateRange[0], maxDate))
       const end = Math.max(start, Math.min(action.dateRange[1], maxDate))

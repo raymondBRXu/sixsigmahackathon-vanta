@@ -39,6 +39,16 @@ Vite proxies `/api` and `/health` to port 8000. Production uses relative URLs, s
 
 Click a station chart's body, or focus the chart and press **Enter** or **Space**, to show that station in a larger chart. The shared clock continues to update its eight-slot window with the same 15/24/6 reference lines. Choose **Back to all stations** or press **Escape** to restore the 20-card grid. The separate **History** button opens the historical chart without changing the grid or enlarged view underneath.
 
+In History, hover or focus any observed point to inspect its date, count and
+matched rules. Turn on **Diagnosis** to select and lock the full date range and
+evaluate all eight pattern tests for the current station and hour. Every point
+contributing to a match is flagged; select an issue tab below the chart to show
+that rule's points in red and read its English explanation above the chart.
+One issue tab collects all matches of that rule. Changing the hour recomputes
+the findings; turning Diagnosis off unlocks the range. Each new History dialog
+starts with Diagnosis off. Missing readings break detection windows, and rules
+that cannot be evaluated are identified separately from rules with no matches.
+
 **View by Station** uses the existing synthetic playback. Its fixed lines are configured inventory references, independent of the estimated Individuals limits in **History**. Missing readings stay gaps; fewer than eight available slots are not padded with invented observations. Baseline approval and automated alarm features are not part of this version. See [MVP](docs/MVP.md) and [verified demo checkpoints](demo/README.md).
 
 ## Inputs and interpretation
@@ -62,6 +72,17 @@ Uploads are temporary, limited to 5 MiB, and stored only in the Python process's
 The Individuals chart preserves missing scheduled readings as gaps in its lines and moving ranges. Non-service dates, such as weekends in the supplied calendar, are not missing readings. Limits are not clipped to physical capacity. Constant data, a single reading or no adjacent valid pair retain the observed values and mean but have no estimated UCL/LCL. Limits are exploratory: bounded inventory and serial dependence can affect their interpretation. These charts do not establish stability, trigger alarms, measure failed customer attempts, give exact outage durations, or prove intervention effects.
 
 The plain statistical functions and plot layering follow the course `sysen/functions/functions_process_control.py` approach, with the deterministic constant documented by [NIST Individuals charts](https://www.itl.nist.gov/div898/handbook/pmc/section3/pmc322.htm). [Data codebook](data/README.md) explains every field, generator and assumption.
+
+The optional diagnosis follows the numbering in the supplied course image:
+T1 one point beyond 3 sigma; T2 two of three beyond 2 sigma on one side;
+T3 four of five beyond 1 sigma on one side; T4 eight on one side of CL;
+T5 six strictly increasing/decreasing; T6 fifteen within inclusive +/-1 sigma;
+T7 eight outside +/-1 sigma with both sides represented; T8 fourteen alternating
+up/down points. All windows use the same full-series mean and MR-based sigma.
+Threshold crossings are strict, ties break trends/alternation, and points at CL
+break T4. Detection lives in `app/dockwatch/patterns.py`, independently of React.
+These exploratory findings do not identify a physical cause or establish a
+calibrated false-alarm rate. Overlapping windows can share contributing points.
 
 ## Python library
 
@@ -98,7 +119,7 @@ All endpoints are documented in `/api/docs`. Index parameters refer to the order
 | `GET /api/config` | `source=normal`; scenario list, stations, hourly timeline, `service_dates`, `hours` and source metadata |
 | `GET /api/snapshot` | `source`, `cursor`; current station rows, metrics and sorted queue |
 | `GET /api/realtime` | `source`, `cursor`; all stations with up to eight scheduled hourly slots ending at the cursor, missing values and fixed 15/24/6 reference lines |
-| `GET /api/analysis` | `source`, `cursor`, `station_id`, `hour`, `start_date`, `end_date`; inclusive same-hour date history and Individuals summary |
+| `GET /api/analysis` | `source`, `cursor`, `station_id`, `hour`, `start_date`, `end_date`, optional `diagnosis=true`; inclusive same-hour date history and Individuals summary |
 | `GET /api/charts/history.svg` | Same selection as analysis; date-axis plotnine Individuals chart |
 | `GET /api/charts/inventory.svg` | `source`, `cursor`, `station_id`; selected station today |
 | `GET /api/charts/heatmap.svg` | `source`, `cursor`; all-station occupancy today |
@@ -106,6 +127,14 @@ All endpoints are documented in `/api/docs`. Index parameters refer to the order
 | `POST /api/uploads` | Multipart `file`; validates CSV and returns configuration with a temporary source ID |
 
 The `cursor` remains an hourly timeline index. The **History** dialog always uses the final timeline index so all data are available, independent of the shared playback clock. Other API callers can still use an earlier cursor to cap readings; date selections must not extend beyond that cursor’s local date. Omitting `hour` retains the earlier `start`/`end` timeline-index analysis for compatibility. The inventory and heatmap SVG endpoints remain available to API callers; the History dialog displays the Individuals chart only.
+
+Diagnosis is off by default. `diagnosis=true` requires a selected hour, full
+configured date bounds and every planned time slot at that hour through the
+final date; otherwise the API rejects the request. Null readings remain in
+that grid. `summary.special_causes` contains per-rule status, raw matching
+windows, contributing indices and one issue entry per detected rule. The
+interactive client renders these results without reimplementing statistics;
+the legacy SVG endpoint remains available for static charts.
 
 Built-in source IDs are `normal`, `disruption`, `edge_cases`. Use the returned source ID for uploaded observations. Invalid selections return HTTP 422; unknown/expired sources return 404. Missing values serialize to JSON `null`.
 

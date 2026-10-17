@@ -24,6 +24,7 @@ from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from dockwatch.data import load_observations, load_settings, load_stations, planned_timestamps
+from dockwatch.patterns import RULESET, detect_special_causes
 from dockwatch.plots import history_plot, inventory_plot, occupancy_heatmap
 from dockwatch.qc import (
     REALTIME_WINDOW_SIZE, hourly_changes, realtime_history, snapshot_at, snapshot_metrics,
@@ -126,7 +127,7 @@ def _snapshot(source, cursor):
     return now, snapshot
 
 
-def _history_selection(observations, station_id, cursor, start, end, hour, start_date, end_date):
+def _history_selection(observations, station_id, cursor, start, end, hour, start_date, end_date, diagnosis=False):
     """Resolve the legacy hourly interval or the selected-hour date series."""
     now = _timestamp(cursor)
     if hour is None:
@@ -143,6 +144,23 @@ def _history_selection(observations, station_id, cursor, start, end, hour, start
         except ValueError as error:
             raise HTTPException(422, str(error)) from error
         selection = {"hour": hour, "start_date": first, "end_date": last}
+    summary["special_causes"] = {
+        "status": "disabled", "ruleset": RULESET, "rule_status": {}, "events": [], "issues": [],
+    }
+    if diagnosis:
+        expected = PLAN[PLAN.hour == hour] if hour is not None else PLAN[:0]
+        if (hour is None
+                or selection["start_date"] != SETTINGS["service_dates"][0]
+                or selection["end_date"] != SETTINGS["service_dates"][-1]
+                or not pd.DatetimeIndex(history["timestamp"]).equals(expected)):
+            raise HTTPException(
+                422, "Diagnosis requires a selected operating hour and the full service-date range, "
+                "including every scheduled slot at that hour through the final date.",
+            )
+        limits = summary["limits"]
+        summary["special_causes"] = detect_special_causes(
+            history["bikes"], summary["cl"], limits["sigma"] if limits else None,
+        )
     return {**selection, "timestamp": now.isoformat()}, history, summary
 
 
@@ -192,12 +210,13 @@ def analysis(
     source: str = "normal", cursor: int = Query(DEFAULT_CURSOR, ge=0),
     station_id: str = "S01", start: int = Query(0, ge=0), end: int | None = Query(None, ge=0),
     hour: int | None = Query(None, ge=0, le=23), start_date: str | None = None, end_date: str | None = None,
+    diagnosis: bool = False,
 ):
-    """Analyze one hour across dates, or all hours with the legacy start/end indexes."""
+    """Analyze one hour across dates; optional diagnosis requires its full calendar."""
     observations, _ = _source(source)
     station = _station(station_id)
     selection, history, summary = _history_selection(
-        observations, station_id, cursor, start, end, hour, start_date, end_date
+        observations, station_id, cursor, start, end, hour, start_date, end_date, diagnosis
     )
     return {
         "station_id": station_id, "capacity": int(station["capacity"]),
